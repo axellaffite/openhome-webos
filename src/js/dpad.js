@@ -385,12 +385,6 @@ function onkey(event) {
 		dpadfocus.dispatchEvent(new Event("input"));
 		return;
 	}
-	// the bottom bar is paged: at its right-hand edge Right turns to the next page (Left at the Apps
-	// button to the previous one), instead of looking for a neighbour that isn't there
-	if(!realappbarbtu.checked && (code===KEY_RIGHT || code===KEY_LEFT) && typeof barpageturn==="function" &&
-	   appbar.contains(dpadfocus) && barpageturn(code===KEY_RIGHT?1:-1,dpadfocus)){
-		return;
-	}
 	const others=list.filter((each) => each!==dpadfocus);
 	const index=pickneighbor(dpadfocus.getBoundingClientRect(),others.map((each) => each.getBoundingClientRect()),code);
 	if(index!==-1){

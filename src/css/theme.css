@@ -178,32 +178,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 /* ---------- Recent row: a little smaller than the dock, so the dock is the hero ---------- */
 #recentrow{ grid-template-columns:repeat(auto-fill,var(--recenttile,var(--bartile))); }
 
-/* ---------- paged dock: the dots along the dock's lower edge ---------- */
-#barpages{
-	display:none;
-	position:absolute;
-	left:1vw;
-	width:calc(100vw - 2vw);
-	bottom:0.4vh;
-	z-index:6;
-	justify-content:center;
-	align-items:center;
-	gap:0.9vw;
-}
-#maindiv.has-barpages #barpages{ display:flex; }
-#realappbarbtu:checked ~ #barpages{ display:none !important; }
-.barpagedot{
-	width:1vh;
-	height:1vh;
-	border-radius:50%;
-	background-color:rgba(255,255,255,0.32);
-	box-shadow:0 1px 3px rgba(0,0,0,0.6);
-	transition:background-color .2s ease,transform .2s ease;
-}
-.barpagedot.on{ background-color:rgb(var(--accent)); transform:scale(1.4); }
-#maindiv.idle #barpages{ filter:brightness(var(--idledim,0.3)); }
-#maindiv.idle-hidebar #barpages{ opacity:0; }
-
 /* ---------- weather: the illustrated icons want room and their own colours ---------- */
 #weathericon svg{ width:6.2vh; height:6.2vh; }
 #weathericon svg.rich{ fill:none; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.5)); }

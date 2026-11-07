@@ -1,0 +1,121 @@
+/*SPDX-License-Identifier: GPL-3.0-or-later*/
+/* Copyright (C) 2026 the OpenHome contributors */
+/* The app manager (js/appmanager.js): every app in one row at the bottom of the screen, the dock's
+   first, then a separator, then the ones that are not on the home screen.
+   Built to stay smooth while an arrow is held: no blur, no animated shadows. The only thing that
+   animates is the picked-up icon lifting, and that is a transform, which the compositor does alone. */
+
+#appmgr{
+	display:none;
+	position:fixed;
+	top:0; left:0;
+	width:100vw;
+	height:100vh;
+	z-index:20000;
+	box-sizing:border-box;
+	padding:0 0 6vh 0;
+	flex-direction:column;
+	justify-content:flex-end;
+	background:linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.78) 45%, rgba(0,0,0,0.55) 100%);
+	color:rgb(255,255,255);
+}
+#maindiv.amopen #appmgr{ display:flex; }
+/* the dock and the controls around it would show faintly through the overlay, under the row and
+   its hint: hidden while it is open (visibility, so nothing is laid out again) */
+#maindiv.amopen #tipbox{ display:none; }
+#maindiv.amopen #appbar, #maindiv.amopen #recentrow, #maindiv.amopen #quickrow,
+#maindiv.amopen #infobtn, #maindiv.amopen #homesettings{ visibility:hidden; }
+
+.amtitle{
+	padding:0 4vw 2vh;
+	font-size:3.2vh;
+	font-weight:600;
+	letter-spacing:0.01em;
+}
+
+/* scrolled from the script (scrollLeft), never by the page */
+.amrow{
+	display:flex;
+	align-items:flex-start;
+	gap:1.6vw;
+	padding:5vh 4vw 2.5vh;
+	overflow:hidden;
+	white-space:nowrap;
+}
+
+.amtile{
+	flex:0 0 7vw;
+	width:7vw;
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	gap:1vh;
+	transition:transform .12s ease, opacity .12s ease;
+}
+.amtile img{
+	display:block;
+	width:6vw;
+	height:6vw;
+	border-radius:22%;
+	object-fit:contain;
+	background-color:rgba(255,255,255,0.06);
+}
+.amtile span{
+	max-width:100%;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	font-size:1.7vh;
+	font-weight:500;
+	opacity:0.8;
+}
+/* past the separator: still listed, plainly not on the home screen */
+.amtile.off{ opacity:0.5; }
+
+/* focus: a solid ring (a spread shadow with no blur, which is cheap to draw) */
+.amtile.on{ opacity:1; }
+.amtile.on img{ box-shadow:0 0 0 0.45vh rgb(var(--accent)); }
+.amtile.on span{ opacity:1; }
+/* picked up: lifted out of the row */
+.amtile.moving{ transform:translateY(-2.6vh); }
+.amtile.moving img{ box-shadow:0 0 0 0.45vh rgb(var(--accent)), 0 0 0 1.1vh rgba(var(--accent),0.3); }
+
+/* the line between the home screen's apps and the rest, with its caption above the row */
+.amsep{
+	position:relative;
+	flex:0 0 3vw;
+	align-self:stretch;
+}
+.amsep::before{
+	content:"";
+	position:absolute;
+	top:-1vh; bottom:0;
+	left:50%;
+	width:0.3vh;
+	margin-left:-0.15vh;
+	border-radius:0.3vh;
+	background-color:rgba(255,255,255,0.5);
+}
+.amsep span{
+	position:absolute;
+	top:-4.4vh;
+	left:50%;
+	padding:0.5vh 1vw;
+	border-radius:2vh;
+	font-size:1.6vh;
+	font-weight:600;
+	letter-spacing:0.04em;
+	text-transform:uppercase;
+	white-space:nowrap;
+	color:rgba(255,255,255,0.85);
+	background-color:rgba(255,255,255,0.12);
+}
+/* a full dock: the separator takes the accent, a hint that the next app in pushes one out */
+.amrow.full .amsep::before{ background-color:rgb(var(--accent)); }
+
+.amhint{
+	padding:1.5vh 4vw 0;
+	font-size:1.9vh;
+	font-weight:500;
+	opacity:0.75;
+	white-space:pre;
+}

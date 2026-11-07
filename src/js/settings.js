@@ -64,8 +64,10 @@ const SETTINGS_SCHEMA=[
 			hint:t("Opens the app menu in Edit mode. That is where you reorder icons, rename them, make folders and choose what sits on the bottom bar: pick an app and press OK."),
 			run:() => openeditmode()},
 		{type:"heading",label:t("Bottom bar")},
-		{key:"barPerPage",compact:true,label:t("Icons per page"),type:"choice",default:14,options:[[10,"10"],[12,"12"],[14,"14"],[16,"16"]],
-			hint:t("How many icons fit on one page of the bottom bar, counting the Apps button. Fewer means bigger icons. With more apps than that, the arrow at the end of the bar turns to the next page.")},
+		// The value is still the number of equal slots the bar is cut into (applysizes): the bar holds the
+		// Apps button and up to 10 apps (DOCK_APPS in main.js), so it needs at least 11.
+		{key:"barPerPage",compact:true,label:t("Icon size"),type:"choice",default:14,options:[[12,t("Large")],[14,t("Medium")],[16,t("Small")]],
+			hint:t("How big the icons on the bottom bar are. The bar holds the Apps button and up to 10 apps: hold OK on one of them to choose which, and in what order.")},
 		{key:"barNames",label:t("Names"),type:"choice",default:true,options:ON_OFF},
 		{key:"barNameSize",compact:true,label:t("Name size"),type:"choice",default:1.5,options:SIZE_OPTIONS(1.2,1.5,1.9,2.3),show:(p) => p.barNames},
 		{type:"heading",label:t("App menu")},
@@ -248,16 +250,16 @@ function applysizes(){
 	if(typeof dateforget==="function"){ dateforget(); }
 	root.setProperty("--accent",prefs.accent);
 	// the bar is exactly `barPerPage` columns wide, so the tile size follows from how many share a page
-	const bartile=Math.round((98/(prefs.barPerPage||10))*100)/100;
+	const bartile=Math.round((98/Math.max(11,prefs.barPerPage||14))*100)/100;
 	const recenttile=Math.round(bartile*RECENT_SCALE*100)/100;
 	root.setProperty("--bartile",bartile+"vw");
 	root.setProperty("--recenttile",recenttile+"vw");
 	root.setProperty("--menutile",prefs.menuSize+"vw");
 	root.setProperty("--menuopacity",String(prefs.menuOpacity/100));
 	root.setProperty("--idledim",String(prefs.idleDim/100));
+	root.setProperty("--idledark",String(1-prefs.idleDim/100));   // opacity of #dimidle over the wallpaper
 	root.setProperty("--barname",prefs.barNameSize+"vh");
 	root.setProperty("--menuname",prefs.menuNameSize+"vh");
-	root.setProperty("--idledark",String(1-prefs.idleDim/100));   // opacity of #dimidle over the wallpaper
 	// Sizes below are estimates in vh/vw of what a tile needs: a tile is about as tall as it is wide, plus its name
 	// (about 3.35x the name's font size once margins are counted). vw -> vh goes through the aspect ratio.
 	// A TV can report a 0x0 window while starting up, so fall back to 16:9 instead of dividing by zero.

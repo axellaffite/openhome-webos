@@ -506,77 +506,23 @@ if (!(turstedapp || rooted )) {
 }
 }
 
-// ---- the bottom bar is paged: `barPerPage` icons at a time (the Apps button is the first of them), so the
-// tiles can be big. Right at the last tile turns to the next page, Left at the Apps button to the previous one.
-let barpage=0;
-let barpagedots=null;
+// ---- the bottom bar: the Apps button, then the first DOCK_APPS pinned apps, on one page. Which apps
+// and in what order is chosen in the app manager (js/appmanager.js: hold OK on a dock icon). Pinned
+// apps past DOCK_APPS stay pinned but are not shown; the manager lists them just after its separator.
+const DOCK_APPS=10;
 
-function barappsperpage(){
-	return Math.max(1,(prefs.barPerPage||10)-1);   // the Apps button takes the first slot of every page
-}
-
-function barpagecount(){
-	if(!applist){ return 1; }
+// the pinned apps the dock can actually show: installed, not hidden, in the pinned order
+function dockapps(){
+	if(!applist){ return []; }
 	const byid={};
 	applist.forEach((eachapp) => {byid[eachapp.id]=eachapp;});
-	const total=pinnedids().filter((eachid) => byid[eachid] && !ishidden(eachid)).length;
-	return Math.max(1,Math.ceil(total/barappsperpage()));
-}
-
-// the dots under the bar; only there when there is more than one page
-function renderbarpages(pages){
-	if(!barpagedots){
-		barpagedots=document.createElement("div");
-		barpagedots.id="barpages";
-		appbar.parentNode.insertBefore(barpagedots,appbar.nextSibling);
-	}
-	maindiv.classList.toggle("has-barpages",pages>1);
-	if(pages<=1){
-		barpagedots.innerHTML="";
-		return;
-	drawerchanged();                          // setting .checked does not fire "change"
-	}
-	if(barpagedots.children.length!==pages){
-		barpagedots.innerHTML="";
-		for(let i=0;i<pages;i++){
-			const dot=document.createElement("span");
-			dot.className="barpagedot";
-			dot.addEventListener("click",((n) => () => {barpage=n;render();})(i));
-			barpagedots.appendChild(dot);
-		}
-	}
-	Array.prototype.forEach.call(barpagedots.children,(dot,i) => dot.classList.toggle("on",i===barpage));
-}
-
-// Left/Right at the edge of the bar turns the page (called from dpad.js). Returns true when it did.
-function barpageturn(dir,el){
-	if(!appbar.contains(el)){ return false; }
-	const pages=barpagecount();
-	if(pages<=1){ return false; }
-	const tiles=Array.prototype.slice.call(appbar.querySelectorAll(".appitem"));
-	const at=tiles.indexOf(el);
-	if(at===-1){ return false; }
-	if(dir>0 && at!==tiles.length-1){ return false; }   // only from the right-hand edge
-	if(dir<0 && at!==0){ return false; }                // only from the Apps button
-	barpage=(barpage+dir+pages)%pages;
-	render();
-	const now=Array.prototype.slice.call(appbar.querySelectorAll(".appitem"));
-	const target=dir>0?(now[1]||now[0]):now[now.length-1];
-	if(target && typeof setfocus==="function"){ setfocus(target); }
-	return true;
+	return pinnedids().filter((eachid) => byid[eachid] && !ishidden(eachid)).map((eachid) => byid[eachid]);
 }
 
 function render() {
 	if(!applist){ return; }
-	const byid={};
-	applist.forEach((eachapp) => {byid[eachapp.id]=eachapp;});
-	const barapps=pinnedids().filter((eachid) => byid[eachid] && !ishidden(eachid)).map((eachid) => byid[eachid]);
-	const perpage=barappsperpage();
-	const pages=Math.max(1,Math.ceil(barapps.length/perpage));
-	barpage=Math.max(0,Math.min(barpage,pages-1));
-	const shown=barapps.slice(barpage*perpage,(barpage+1)*perpage);
+	const shown=dockapps().slice(0,DOCK_APPS);
 	placetiles(appbar,shown.map((eachapp) => tilefor(eachapp,true)),1);   // the Apps button stays first
-	renderbarpages(pages);
 	placetiles(appluncher,drawertilelist(),0);
 	renderfolderbar();
 	renderrecent();
@@ -588,6 +534,7 @@ function render() {
 function openeditmode(){
 	if(typeof closesettings==="function"){ closesettings(); }
 	realappbarbtu.checked=true;
+	drawerchanged();                          // setting .checked does not fire "change"
 	if(!editing){ toggleedit(); }
 }
 

@@ -764,6 +764,15 @@ const I18N_SR={
 	"Commons, saved ":"Commons, sa\u010duvano ",
 	"Pictures to keep":"Koliko slika \u010duvati",
 	"How many downloaded photographs to keep on the disk, at about 1.9 MB each. Finding more than this already there raises it rather than deleting them.":"Koliko preuzetih fotografija \u010duvati na disku, po oko 1,9 MB. Ako se zatekne vi\u0161e od toga, granica se podi\u017ee umesto da se bri\u0161u.",
+	// the app manager (js/appmanager.js) and the bottom bar's size setting
+	"Arrange the home screen":"Uredi po\u010detni ekran",
+	"Not on the home screen":"Nije na po\u010detnom ekranu",
+	"Move":"Pomeri",
+	"Place":"Postavi",
+	"Choose":"Izaberi",
+	"Back":"Nazad",
+	"Icon size":"Veli\u010dina ikona",
+	"How big the icons on the bottom bar are. The bar holds the Apps button and up to 10 apps: hold OK on one of them to choose which, and in what order.":"Koliko su velike ikone na donjoj traci. Traka sadr\u017ei dugme Aplikacije i do 10 aplikacija: dr\u017eite OK na jednoj od njih da izaberete koje i kojim redom.",
 };
 
 const I18N_TABLES={sr:I18N_SR};

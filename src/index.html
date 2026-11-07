@@ -15,6 +15,8 @@
 <!-- The optional "Editorial" look. Every rule inside is scoped to html.look-editorial, so
      loading it changes nothing until Settings > Clock > Look turns that class on. -->
 <link rel="stylesheet" href="css/editorial.css">
+<!-- the app manager (js/appmanager.js): hold OK on an app in the dock -->
+<link rel="stylesheet" href="css/appmanager.css">
 
 <body>
 	<!-- Wallpaper is a video (hardware decoded, unlike CSS background images), driven by startbackground() in background.js: network
@@ -30,12 +32,12 @@
 	     background.js loads, and decides the real Video source (may leave this playing, or hand off to it) same as before. -->
 	<video id="bgvideo" autoplay muted playsinline></video>
 	<script>bgvideo.src="access/wallpaper/loop.mp4";bgvideo.play().catch(()=>{});</script>
-	<div id="prefetchmaindiv">
-	<!-- Hack : make appluncher always loaded (just hidden) so it can be faster when i open/close it -->
 	<!-- Darkens the wallpaper (night, idle, open drawer) by fading black layers in over it. Filtering the video itself would pull
 	     it off the TV's hardware video plane and make the GPU recomposite a 4K picture every frame. Must stay after #bgvideo
 	     (photowall.js inserts its layers right after it) and before #prefetchmaindiv, so it draws over the wallpaper only. -->
 	<div id="bgdim"><div id="dimnight"></div><div id="dimidle"></div><div id="dimdrawer"></div></div>
+	<div id="prefetchmaindiv">
+	<!-- Hack : make appluncher always loaded (just hidden) so it can be faster when i open/close it -->
 	<div id="maindiv">
 	<input type="checkbox"  id="realappbarbtu" >
 	<!-- clock and date are full-screen layers placed by settings.js; the date sits in #clockstack (under the clock) or moves to #datelayer -->
@@ -171,6 +173,8 @@
 <script src="js/forecast.js"></script>
 <script src="js/homesettings.js"></script>
 <script src="js/tooltip.js"></script>
+<!-- after main.js and dpad.js (it uses their functions), and its key listeners run before dpad.js's -->
+<script src="js/appmanager.js"></script>
 <script src="js/syspanel.js"></script>
 <script src="js/tvsettings.js"></script>
 </body>
