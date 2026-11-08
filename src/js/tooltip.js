@@ -76,15 +76,11 @@ function tipplace(el){
 }
 
 (function(){
-	const setfocuswas=window.setfocus;
-	if(typeof setfocuswas==="function"){
-		window.setfocus=function(el){
-			const result=setfocuswas.apply(this,arguments);
-			const target=el?tiptarget(el):null;
-			if(target){ tipshow(target); } else { tiphide(); }
-			return result;
-		};
-	}
+	// the remote's focus moved (dpad.js): label what it is on now, or nothing
+	onfocuschange((el) => {
+		const target=el?tiptarget(el):null;
+		if(target){ tipshow(target); } else { tiphide(); }
+	});
 	document.addEventListener("mouseover",function(event){
 		const target=tiptarget(event.target);
 		if(target){ tipshow(target); } else if(!document.querySelector(".appitem.dfocus,.qchip.dfocus")){ tiphide(); }

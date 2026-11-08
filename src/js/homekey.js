@@ -10,15 +10,8 @@
 
 function gohome(){
 	if(typeof istyping==="function" && istyping()){ document.activeElement.blur(); }
-	// the overlays first, innermost to outermost, each only if it is open
-	if(typeof amisopen==="function" && amisopen()){ amclose(); }
-	if(typeof appmenuopen==="function" && appmenuopen()){ closeappmenu(); }
-	if(typeof renameopen==="function" && renameopen()){ closerename(); }
-	if(typeof folderpickeropen==="function" && folderpickeropen()){ closefolderpicker(); }
-	if(typeof forecastopen==="function" && forecastopen()){ closeforecast(); }
-	if(typeof sysopen==="function" && sysopen()){ closesys(); }
-	if(typeof infoisopen==="function" && infoisopen()){ closeinfo(); }
-	if(typeof settingsisopen==="function" && settingsisopen()){ closesettings(); }
+	// every open panel (dpad.js's registerpanel), the topmost first
+	PANELS.filter((panel) => panel.isopen()).forEach((panel) => panel.close());
 	if(carrying){ stopcarry(); }
 	// the drawer: back to All apps at the top, for the next time it opens
 	const infolder=openfolder!==null;

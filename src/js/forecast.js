@@ -110,23 +110,8 @@ function closeforecast(){
 	weather.addEventListener("click",function(){
 		if(forecastopen()){ closeforecast(); } else { openforecast(); }
 	});
-	// ...which means the remote has to be able to land on it at home
-	const contextelementswas=window.contextelements;
-	window.contextelements=function(){
-		if(forecastopen()){ return within(fcpanel,"button"); }
-		const base=contextelementswas.apply(this,arguments);
-		if(!realappbarbtu.checked && !settingsisopen() && prefs.weatherShow && isvisible(weather)){
-			return [weather].concat(base);
-		}
-		return base;
-	};
-	// ...and Back has one more layer to peel off
-	const handlebackwas=window.handleback;
-	window.handleback=function(){
-		if(forecastopen()){
-			closeforecast();
-			return;
-		}
-		return handlebackwas.apply(this,arguments);
-	};
+	// ...which means the remote has to be able to land on it at home, just after the status strip
+	registerhomeextra({order:2,where:"before",element:() => weather,show:() => prefs.weatherShow});
+	// ...and the forecast is a panel: it has the remote while open, and Back or Home close it
+	registerpanel({name:"forecast",order:80,isopen:() => forecastopen(),close:() => closeforecast(),elements:() => within(fcpanel,"button")});
 })();

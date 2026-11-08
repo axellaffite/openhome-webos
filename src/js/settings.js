@@ -558,7 +558,15 @@ function opensettings(){
 	maindiv.classList.add("settingsopen");
 }
 
+// things to stop when the panel closes (the TV tab's Bluetooth scan): onsettingsclose(fn)
+const SETTINGSCLOSERS=[];
+
+function onsettingsclose(fn){
+	SETTINGSCLOSERS.push(fn);
+}
+
 function closesettings(){
+	SETTINGSCLOSERS.forEach((fn) => fn());
 	confirming=null;
 	sethint("");
 	endpeek();

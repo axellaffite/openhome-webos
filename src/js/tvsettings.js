@@ -993,11 +993,5 @@ function rendertvsettings(box){
 document.addEventListener("DOMContentLoaded",() => {
 	setTimeout(() => { tvsread(); },9000);
 	// ...and it does not outlive the settings panel either
-	const closewas=window.closesettings;
-	if(typeof closewas==="function"){
-		window.closesettings=function(){
-			if(tvsbtscanning){ tvsbtscan(false); }
-			return closewas.apply(this,arguments);
-		};
-	}
+	onsettingsclose(() => { if(tvsbtscanning){ tvsbtscan(false); } });
 });

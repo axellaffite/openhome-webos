@@ -346,6 +346,10 @@ function onamclick(event){
 	event.stopPropagation();
 }
 
+// a panel like the others (dpad.js), so the Home button closes it; it reads its own keys, so it
+// offers the remote nothing to focus
+registerpanel({name:"appmanager",order:100,isopen:() => amisopen(),close:() => amclose(),elements:() => []});
+
 function initappmanager(){
 	// capture phase, so these run before dpad.js's own window listeners
 	window.addEventListener("keydown",onamkeydown,true);

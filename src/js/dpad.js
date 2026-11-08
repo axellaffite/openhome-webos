@@ -74,26 +74,73 @@ function appmenuopen() {
 	return maindiv.classList.contains("menuopen");
 }
 
+// ---- what other files plug into the remote's navigation
+// Other files used to change the remote's behaviour by replacing contextelements(), handleback()
+// and setfocus() with wrappers around the previous version, so what happened depended on the
+// order the <script> tags happened to load in. They now register here instead, and the order is
+// written down.
+//
+// A PANEL is anything drawn over the screen that takes the remote while it is open. The open
+// panel with the highest `order` owns the remote: only its elements can be focused, Back closes
+// it, and the Home button (homekey.js) closes every open one.
+//   {name, order, isopen(), close(), elements()}
+const PANELS=[];
+
+function registerpanel(panel) {
+	PANELS.push(panel);
+	PANELS.sort((a,b) => b.order-a.order);
+}
+
+function openpanel() {
+	return PANELS.filter((panel) => panel.isopen())[0] || null;
+}
+
+// A HOME EXTRA is one more thing the remote can land on on the plain home screen - no panel open,
+// drawer closed - placed before the normal items or after them, in `order`.
+//   {order, where:"before"|"after", element(), show()}
+const HOMEEXTRAS=[];
+
+function registerhomeextra(extra) {
+	HOMEEXTRAS.push(extra);
+	HOMEEXTRAS.sort((a,b) => a.order-b.order);
+}
+
+function homeextras(where) {
+	return HOMEEXTRAS.filter((extra) => extra.where===where).map((extra) => {
+		const el=extra.element();
+		return el && extra.show() && isvisible(el)?el:null;
+	}).filter((el) => el!==null);
+}
+
+// called with the newly focused element (or null) after every focus change
+const FOCUSWATCHERS=[];
+
+function onfocuschange(watcher) {
+	FOCUSWATCHERS.push(watcher);
+}
+
+// this file's own panels, highest order first. Other files' panels sit above them: the system
+// panel (90) and the forecast (80), and the app manager (100), which reads its keys itself.
+registerpanel({name:"rename",order:60,isopen:() => renameopen(),close:() => closerename(),elements:() => within(renamebox,"button, input")});
+registerpanel({name:"picker",order:50,isopen:() => folderpickeropen(),close:() => closefolderpicker(),elements:() => within(folderpicker,"button, input")});
+registerpanel({name:"menu",order:40,isopen:() => appmenuopen(),close:() => closeappmenu(),elements:() => within(appmenu,"button")});
+registerpanel({name:"settings",order:30,isopen:() => settingsisopen(),close:() => closesettings(),elements:() => within(settingspanel,"button, input, textarea")});
+registerpanel({name:"info",order:20,isopen:() => infoisopen(),close:() => closeinfo(),elements:() => within(infocard,"button, input")});
+
 function contextname() {
-	if(renameopen()){ return "rename"; }
-	if(folderpickeropen()){ return "picker"; }
-	if(appmenuopen()){ return "menu"; }
-	if(settingsisopen()){ return "settings"; }
-	if(infoisopen()){ return "info"; }
+	const panel=openpanel();
+	if(panel){ return panel.name; }
 	return realappbarbtu.checked?"drawer":"home";
 }
 
 function contextelements() {
-	if(renameopen()){ return within(renamebox,"button, input"); }
-	if(folderpickeropen()){ return within(folderpicker,"button, input"); }
-	if(appmenuopen()){ return within(appmenu,"button"); }
-	if(settingsisopen()){ return within(settingspanel,"button, input, textarea"); }
-	if(infoisopen()){ return within(infocard,"button, input"); }
+	const panel=openpanel();
+	if(panel){ return panel.elements(); }
 	if(realappbarbtu.checked){
 		return within(folderbar,"button").concat(within(appluncher,".appitem"),[settingsbtn,editbtn].filter(isvisible),within(appbar,".appitem"));
 	}
 	const quick=(typeof quickrow!=="undefined" && quickrow)?within(quickrow,"button"):[];
-	return quick.concat(within(appbar,".appitem"),within(recentrow,".appitem"),[infobtn].filter(isvisible));
+	return homeextras("before").concat(quick,within(appbar,".appitem"),within(recentrow,".appitem"),[infobtn].filter(isvisible),homeextras("after"));
 }
 
 // ---- focus
@@ -120,6 +167,7 @@ function setfocus(el) {
 		reveal(el);
 		if(settingsisopen()){ settingsfocused(el); }
 	}
+	FOCUSWATCHERS.forEach((watcher) => watcher(el));
 }
 
 function clearfocus() {
@@ -260,21 +308,16 @@ function movecarriedbykey(key) {
 }
 
 // ---- keys
+// Back peels one layer off: the text box being typed in, an app being carried, the open panel
+// (see registerpanel), the folder shown in the drawer, then the drawer itself
 function handleback() {
+	const panel=openpanel();
 	if(istyping()){
 		document.activeElement.blur();
 	} else if(carrying){
 		stopcarry();
-	} else if(appmenuopen()){
-		closeappmenu();
-	} else if(renameopen()){
-		closerename();
-	} else if(folderpickeropen()){
-		closefolderpicker();
-	} else if(settingsisopen()){
-		closesettings();
-	} else if(infoisopen()){
-		closeinfo();
+	} else if(panel){
+		panel.close();
 	} else if(realappbarbtu.checked && openfolder!==null){
 		openfolder=null;
 		render();

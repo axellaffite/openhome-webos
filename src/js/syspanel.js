@@ -335,26 +335,10 @@ function closesys(){
 		if(strip===event.target || strip.contains(event.target)){ opensys(); }
 	});
 
-	// ...and the remote has to be able to land on it at home, the same way it lands on the weather
-	const contextelementswas=window.contextelements;
-	window.contextelements=function(){
-		if(sysopen()){ return within(sypanel,"button"); }
-		const base=contextelementswas.apply(this,arguments);
-		const strip=document.getElementById("statusbar");
-		if(strip && !realappbarbtu.checked && !settingsisopen() &&
-			(typeof forecastopen!=="function" || !forecastopen()) && isvisible(strip)){
-			return [strip].concat(base);
-		}
-		return base;
-	};
+	// ...and the remote has to be able to land on it at home, first, the same way it lands on the
+	// weather. status.js takes the strip out of the page when it is off, so it is looked up each time.
+	registerhomeextra({order:1,where:"before",element:() => document.getElementById("statusbar"),show:() => true});
 
-	// ...and Back peels this layer off too
-	const handlebackwas=window.handleback;
-	window.handleback=function(){
-		if(sysopen()){
-			closesys();
-			return;
-		}
-		return handlebackwas.apply(this,arguments);
-	};
+	// ...and the panel has the remote while it is open; Back or Home close it
+	registerpanel({name:"system",order:90,isopen:() => sysopen(),close:() => closesys(),elements:() => within(sypanel,"button")});
 })();

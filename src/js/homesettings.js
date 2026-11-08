@@ -34,13 +34,6 @@ function thingear(){
 	});
 	maindiv.appendChild(button);
 
-	// the remote reaches it the same way it reaches the info button
-	const contextelementswas=window.contextelements;
-	window.contextelements=function(){
-		const base=contextelementswas.apply(this,arguments);
-		if(!realappbarbtu.checked && !settingsisopen() && isvisible(button) && base.indexOf(button)===-1){
-			return base.concat([button]);
-		}
-		return base;
-	};
+	// the remote reaches it the same way it reaches the info button: last on the home screen
+	registerhomeextra({order:1,where:"after",element:() => button,show:() => true});
 })();
