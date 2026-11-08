@@ -157,16 +157,30 @@ function emptyfoldernote() {
 	return note;
 }
 
+// "All apps" lists its folders, then its apps, each A to Z by the name shown on the tile (a
+// renamed app sorts under its new name). Case and accents are ignored and numbers compare as
+// numbers, so "App 2" comes before "App 10". The TV's own locale decides the alphabet.
+const DRAWER_COLLATOR=new Intl.Collator(undefined,{sensitivity:"base",numeric:true});
+
+function alphabetical(list,nameof){
+	return list.slice().sort((a,b) => DRAWER_COLLATOR.compare(nameof(a),nameof(b)));
+}
+
 // the drawer's tiles for the current view, in order (used by render() in main.js)
 function drawertilelist() {
 	const shown=(app) => editing || !ishidden(app.id);
 	const inthisview=(app) => openfolder===null?!settings.appfolder[app.id]:settings.appfolder[app.id]===openfolder;
 	if(openfolder!==null && !folderbyid(openfolder)){ openfolder=null; }   // it was deleted (or restored from a backup without it)
+	// Edit mode keeps the saved order: that is where tiles are reordered by carrying them, and in
+	// a sorted list a carried app would never visibly move. Folder views keep it too.
+	const sorted=openfolder===null && !editing;
 	const tiles=[];
 	if(openfolder===null){
-		settings.folders.forEach((each) => tiles.push(foldertilefor(each)));
+		const folders=sorted?alphabetical(settings.folders,(folder) => folder.name):settings.folders;
+		folders.forEach((each) => tiles.push(foldertilefor(each)));
 	}
-	const apps=orderedapps().filter((app) => shown(app) && inthisview(app));
+	const listed=orderedapps().filter((app) => shown(app) && inthisview(app));
+	const apps=sorted?alphabetical(listed,appdisplayname):listed;
 	apps.forEach((app) => tiles.push(tilefor(app,false)));
 	if(openfolder!==null && apps.length===0){ tiles.push(emptyfoldernote()); }
 	return tiles;
