@@ -280,6 +280,24 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
    and off makes the browser lay that tile out again on every key press. Here it is simply never
    on, which costs nothing for a dozen tiles. */
 #appbar .appicon, #recentrow .appicon{ will-change:transform; }
+
+/* ---------- the drawer gets a GPU layer of its own ----------
+   The dock icons' layers above make #appbar a composited layer, and #appbar::after stretches it
+   to almost the whole screen (1920x1069). The drawer is drawn over that, so without a layer of
+   its own Chrome painted the drawer INTO the dock's layer: every focus move in the drawer re-
+   rasterised large parts of a near full-screen 4K layer on the GPU (20 to 64 tiles a press,
+   184 ms on the GPU thread for one of them). With its own layer only the tile that changed is
+   redrawn. The focused drawer icon also drops the big soft drop shadow: a 3.4vh blur redrawn
+   on every move, at 4K. The accent ring and its halo stay.
+   Measured on the TV over the DevTools protocol, Down x3 then Up x3 from the same app, worst
+   frame of each run: 200 - 233 ms before, 50 - 67 ms with the layer alone, 33 ms with both.
+   Opening the drawer: 217 - 233 ms before, 117 - 133 ms after. The dock is unchanged. */
+#appluncher{ will-change:transform; }
+#appluncher .appitem:hover .appicon, #appluncher .appitem.dfocus .appicon{
+	box-shadow:
+		inset 0 0 0 0.3vh rgba(var(--accent),0.95),
+		0 0 0 0.5vh rgba(var(--accent),0.35);
+}
 #appbar .appitem, #recentrow .appitem{ contain:layout style; }
 #realappbarbtu:checked ~ #appluncher{ animation:drawer-in .15s ease both; }
 @keyframes drawer-in{ from{ opacity:0; transform:translateY(1.2vh); } to{ opacity:1; transform:none; } }
