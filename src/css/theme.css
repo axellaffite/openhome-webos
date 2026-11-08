@@ -3,15 +3,22 @@
 /* OpenLauncher - the visual overhaul.
    Loaded AFTER main.css, so it only overrides visual properties; no layout maths, DOM or
    JS behaviour is touched. Turn this one <link> off in index.html to get the old look back.
-   Code comments are English (to match the repo); all on-screen text is Serbian. */
+   Code comments are English (to match the repo); all on-screen text is Serbian.
+
+   It used to be two files, this one and editorial.css, built up in rounds that kept overriding
+   each other. They were merged into one, and every declaration a later rule always overrode was
+   removed: same selector, same property, at least the same importance. Nothing was reordered, and
+   a later rule an old Chromium (68, webOS 5) would drop as invalid was not counted as overriding.
+   Checked on the TV: every computed property of every element, pseudo-elements included, in ten
+   states (both looks, drawer, settings, forecast, app manager, idle and night) came out the same.
+   The Editorial look, the old editorial.css, is the last section. */
 
 :root{
 	/* frosted-glass surfaces and hairline borders used across the UI */
 	--glass:        rgba(16,18,26,0.60);
 	--glass-strong: rgba(14,16,24,0.84);
 	--hair:         rgba(255,255,255,0.14);
-	--tile-radius:  22%;
-	--fade-ms:      650ms;     /* keep in step with FADE in js/fade.js */
+	--tile-radius:  22%;     /* keep in step with FADE in js/fade.js */
 }
 
 /* ---------- wallpaper cross-fade (opacity driven by js/fade.js) ---------- */
@@ -27,33 +34,20 @@
 	content:"";
 	position:absolute;
 	left:-1vw; right:-1vw; bottom:0;
-	height:46vh;
 	z-index:-2;
 	pointer-events:none;
-	background: linear-gradient(to top,
-		rgba(0,0,0,0.80) 0%,
-		rgba(0,0,0,0.52) 26%,
-		rgba(0,0,0,0.00) 100%);
 }
 
 /* ---------- the bottom bar becomes a frosted dock ---------- */
 #appbar{
-	background: linear-gradient(to top, rgba(18,20,28,0.68), rgba(18,20,28,0.34));
-	border: 1px solid var(--hair);
 	border-bottom: none;
-	border-radius: 2.4vh 2.4vh 0 0;
-	box-shadow: 0 -0.3vh 3vh rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.07);
-	-webkit-backdrop-filter: blur(22px) saturate(1.2);
-	backdrop-filter: blur(22px) saturate(1.2);
 }
 
 /* ---------- app tiles: rounded icons, a soft lift, a clean accent focus ---------- */
 .appicon{
 	border-radius: var(--tile-radius);
 	box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10), 0 1vh 2.2vh rgba(0,0,0,0.45);
-	transition: box-shadow .18s ease, transform .18s ease;
 }
-.appitem{ transition: transform .18s ease; }
 #appbar .appitem, #recentrow .appitem{ transform-origin: center bottom; }
 
 .appname{
@@ -68,9 +62,7 @@
 	background-color: transparent !important;
 	box-shadow: none;
 	outline: none;
-}
-.appitem:hover, .appitem.dfocus{ transform: scale(1.12); z-index: 6; }
-#appluncher .appitem:hover, #appluncher .appitem.dfocus{ transform: scale(1.08); }   /* gentler inside the scrolling drawer */
+}   /* gentler inside the scrolling drawer */
 .appitem:hover .appicon, .appitem.dfocus .appicon{
 	box-shadow:
 		inset 0 0 0 0.3vh rgba(var(--accent),0.95),
@@ -85,12 +77,9 @@
 	content:"";
 	position:absolute;
 	z-index:-1;
-	left:-5vw; right:-5vw; top:-4vh; bottom:-4vh;
 	pointer-events:none;
-	background: radial-gradient(120% 120% at 24% 34%, rgba(0,0,0,0.50), rgba(0,0,0,0) 70%);
 }
 #clocktime{
-	letter-spacing: -0.01em;
 	text-shadow: 0 0.3vh 1.3vh rgba(0,0,0,0.78), 0 2px 6px rgba(0,0,0,0.6);
 }
 #clockdate{
@@ -107,40 +96,21 @@
 #weathertemp{ text-shadow: 0 2px 8px rgba(0,0,0,0.85); }
 #weatherdetail{ opacity: 0.95; }
 
-/* ---------- Recent row label ---------- */
-#recentlabel{
-	color: rgb(var(--accent));
-	opacity: 1;
-	font-size: 1.8vh;
-}
-
 /* ---------- drawer, folder bar and dialogs: one consistent frosted-glass look ---------- */
 #appluncher{
 	border-radius: 2vh;
-	-webkit-backdrop-filter: blur(26px) saturate(1.15);
-	backdrop-filter: blur(26px) saturate(1.15);
 }
 #folderbar{
 	border-bottom: 1px solid var(--hair);
 	border-radius: 0 0 2vh 2vh;
-	-webkit-backdrop-filter: blur(22px) saturate(1.15);
-	backdrop-filter: blur(22px) saturate(1.15);
 }
 #settingspanel, #folderpicker, #renamebox, #appmenu, #infocard, #movetoast{
 	box-shadow: 0 2vh 6vh rgba(0,0,0,0.6);
-	-webkit-backdrop-filter: blur(30px) saturate(1.2);
-	backdrop-filter: blur(30px) saturate(1.2);
-}
-#settingsbackdrop, #folderbackdrop, #renamebackdrop, #appmenubackdrop{
-	-webkit-backdrop-filter: blur(2px);
-	backdrop-filter: blur(2px);
 }
 
 /* ---------- home-screen buttons: rounder, with the same glass ---------- */
 #editbtn, #settingsbtn, #infobtn{
 	border-radius: 1vh;
-	-webkit-backdrop-filter: blur(14px);
-	backdrop-filter: blur(14px);
 }
 
 /* =====================================================================
@@ -171,7 +141,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 #weathertemp{ font-weight:600; }
 #weatherdetail{ font-weight:500; }
 .appname{ font-weight:500; }
-#recentlabel{ font-weight:700; }
 #settingshead,.aboutname,#infoname,#appmenutitle,#folderapp,#renametitle{ font-weight:600; }
 .sheading,.chip,.stab,.sopt{ font-weight:600; }
 
@@ -180,7 +149,7 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 
 /* ---------- weather: the illustrated icons want room and their own colours ---------- */
 #weathericon svg{ width:6.2vh; height:6.2vh; }
-#weathericon svg.rich{ fill:none; filter:drop-shadow(0 3px 6px rgba(0,0,0,0.5)); }
+#weathericon svg.rich{ fill:none; }
 #weatherrow{ gap:0.8vw; }
 
 /* ---------- app drawer: a roomier sheet with an accent glow and a soft entrance ---------- */
@@ -189,8 +158,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	box-shadow:inset 0 1px 0 rgba(255,255,255,0.07), 0 2vh 6vh rgba(0,0,0,0.5);
 	padding-top:1.5vh;
 }
-#realappbarbtu:checked ~ #appluncher{ animation:drawer-in .26s ease both; }
-@keyframes drawer-in{ from{ opacity:0; transform:translateY(2.2vh); } to{ opacity:1; transform:none; } }
 
 /* the strip above the drawer becomes its toolbar, with a title and bigger chips */
 #folderbar{
@@ -211,17 +178,12 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	color:rgb(255,255,255);
 	text-shadow:0 2px 6px rgba(0,0,0,0.6);
 }
-#maindiv.hasfolders #appluncher{ top:10vh; height:calc(100vh - var(--barh) - 10vh); }
 .chip{ font-size:2.4vh; padding:1vh 1.6vw; }
 .chip.on{ box-shadow:0 0 0 0.35vh rgba(var(--accent),0.3); }
 .chipicon{ width:3vh; height:3vh; }
 
 /* ---------- fixes after seeing it on the panel ---------- */
-/* The dock is tall now, so the corner buttons sat on top of its last tiles.
-   The info button moves to the free top-right corner (the clock is top-left)... */
-#infobtn{ top:3vh; right:2vw; bottom:auto; }
-#infocard{ top:11vh; right:2vw; bottom:auto; }
-/* ...and the drawer's Settings/Edit buttons float just above the dock instead of over it. */
+/* The dock is tall now: the drawer's Settings/Edit buttons float just above it instead of over it. */
 #drawertools{ bottom:calc(var(--barh) + 1.5vh); }
 
 /* The drawer was a full-height sheet with one row of apps and a lot of void under it.
@@ -259,9 +221,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	-webkit-backdrop-filter:none;
 	backdrop-filter:none;
 }
-/* a touch more body in the dock now that nothing blurs behind it */
-#appbar{ background:linear-gradient(to top, rgba(18,20,28,0.82), rgba(18,20,28,0.52)); }
-
 :root{ --fade-ms:340ms; }                       /* wallpaper cross-fade, in step with js/fade.js */
 .appitem{ transition:transform .11s ease; }
 /* The focus ring and its glow are box-shadows; animating them repaints the tile on every frame of
@@ -327,8 +286,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	z-index:4;
 	display:flex;
 	align-items:center;
-	gap:1.3vw;
-	padding:1.1vh 1.7vw;
 	box-sizing:border-box;
 	border-radius:99px;
 	color:rgb(255,255,255);
@@ -336,7 +293,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	border:1px solid rgba(255,255,255,0.10);
 	box-shadow:0 1vh 3vh rgba(0,0,0,0.35);
 	text-shadow:0 1px 4px rgba(0,0,0,0.8);
-	pointer-events:none;
 }
 #realappbarbtu:checked ~ #statusbar{ display:none; }
 /* t("Icon only"): nothing in the strip but the network glyph, so the corner stays quiet and the
@@ -352,11 +308,11 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 #statusbar.compact .sticon{ color:rgb(255,255,255); filter:drop-shadow(0 2px 12px rgba(0,0,0,0.7)); }
 .sticon svg{ display:block; width:100%; height:100%; }
 .sttext{ display:flex; flex-direction:column; line-height:1.15; }
-.sttext b{ font-size:2vh; font-weight:600; }
-.sttext small{ font-size:1.5vh; opacity:0.75; }
+.sttext b{ font-weight:600; }
+.sttext small{ opacity:0.75; }
 .stsep{ width:1px; height:3.6vh; background-color:rgba(255,255,255,0.16); }
-.stgauge{ display:flex; flex-direction:column; gap:0.45vh; min-width:7.5vw; }
-.stname{ font-size:1.35vh; letter-spacing:0.09em; text-transform:uppercase; opacity:0.7; }
+.stgauge{ display:flex; flex-direction:column; gap:0.45vh; }
+.stname{ letter-spacing:0.09em; text-transform:uppercase; opacity:0.7; }
 .stmeter{ height:0.7vh; border-radius:99px; background-color:rgba(255,255,255,0.18); overflow:hidden; }
 /* The fill is full width and slid left, not sized. Width is a layout property, so animating it
    made the renderer lay the page out on every frame of the transition, three gauges at a time,
@@ -368,7 +324,7 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 .stmeter i{ display:block; height:100%; width:100%; border-radius:99px; background-color:rgb(var(--accent));
 	transform:translateX(-100%); transition:transform .3s ease; will-change:transform; }
 .stgauge.hot .stmeter i{ background-color:#FF6B6B; }
-.stvalue{ font-size:1.6vh; font-weight:600; opacity:0.95; }
+.stvalue{ font-weight:600; opacity:0.95; }
 /* it dims and hides with the rest of the UI (screen.js) */
 #statusbar{ transition:opacity 3s ease, filter 3s ease; }
 #maindiv.idle #statusbar{ filter:brightness(var(--idledim,0.3)); }
@@ -377,7 +333,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
    wallpaper. Fade it out well inside the box so there is no edge at all. */
 #clockstack::before{
 	left:-8vw; right:-8vw; top:-6vh; bottom:-6vh;
-	background:radial-gradient(58% 58% at 26% 38%, rgba(0,0,0,0.55), rgba(0,0,0,0) 100%);
 }
 /* The dock holds `barPerPage` slots but usually fewer apps, which left a gap on the right.
    Let the grid make exactly as many columns as there are tiles, so justify-content can centre
@@ -437,7 +392,7 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 /* ---------- the next few hours, under the weather ---------- */
 #forecast{ display:flex; gap:1.1vw; margin-top:1.3vh; }
 .fcell{ display:flex; flex-direction:column; align-items:center; gap:0.25vh; min-width:3.2vw; }
-.fhour{ font-size:1.4vh; opacity:0.72; letter-spacing:0.03em; }
+.fhour{ font-size:1.4vh; letter-spacing:0.03em; }
 .ficon{ display:block; width:3.4vh; height:3.4vh; }
 .ficon svg{ display:block; width:100%; height:100%; }
 .ftemp{ font-size:1.85vh; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -446,14 +401,10 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 #quickrow{
 	display:none;
 	position:absolute;
-	left:2vw;
-	bottom:calc(var(--barh) + 2.2vh);
 	z-index:5;
 	align-items:center;
-	gap:0.8vw;
 }
 #maindiv.has-quick #quickrow{ display:flex; }
-#maindiv.has-recent #quickrow{ bottom:calc(var(--barh) + var(--recenth) + 3.5vh); }
 #realappbarbtu:checked ~ #quickrow{ display:none !important; }
 #quicklabel{
 	margin:0 0.5vw 0 0;
@@ -468,16 +419,10 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	font-family:inherit;
 	font-size:1.9vh;
 	font-weight:600;
-	padding:0.9vh 1.4vw;
-	border-radius:99px;
 	white-space:nowrap;
 	color:rgb(255,255,255);
-	background-color:rgba(16,18,26,0.55);
-	border:1px solid rgba(255,255,255,0.16);
 	text-shadow:0 1px 3px rgba(0,0,0,0.7);
-	transition:background-color .11s ease;
 }
-.qchip:hover{ background-color:rgba(var(--accent),0.45); }
 #maindiv.idle #quickrow{ filter:brightness(var(--idledim,0.3)); }
 #maindiv.idle-hidebar #quickrow{ opacity:0; }
 #quickrow{ transition:opacity 3s ease, filter 3s ease; }
@@ -500,12 +445,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 }
 #appbar::after{
 	height:52vh;
-	background:linear-gradient(to top,
-		rgba(0,0,0,0.90) 0%,
-		rgba(0,0,0,0.78) 12%,
-		rgba(0,0,0,0.52) 30%,
-		rgba(0,0,0,0.22) 55%,
-		rgba(0,0,0,0.00) 100%);
 }
 
 /* ---------- shortcuts, restyled: round icon buttons centred just above the dock ----------
@@ -518,31 +457,16 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	justify-content:center;
 	gap:1.1vw;
 }
-#maindiv.has-recent #quickrow{ bottom:calc(var(--barh) + var(--recenth) + 2.6vh); }
 #quicklabel{ display:none; }
 .qchip{
 	display:flex;
 	align-items:center;
 	justify-content:center;
-	width:5.4vh;
-	height:5.4vh;
 	padding:0;
-	border-radius:50%;
-	background-color:rgba(255,255,255,0.10);
-	border:1px solid rgba(255,255,255,0.18);
-	box-shadow:0 0.6vh 1.6vh rgba(0,0,0,0.35);
-	transition:background-color .11s ease, border-color .11s ease;
 }
 .qchip .qicon{
 	display:block;
-	width:62%;
-	height:62%;
 	object-fit:contain;
-	border-radius:22%;
-}
-.qchip:hover, .qchip.dfocus{
-	background-color:rgba(var(--accent),0.55);
-	border-color:rgb(var(--accent));
 }
 
 /* ---------- photo wallpapers: two layers that cross-fade (js/photowall.js) ---------- */
@@ -558,21 +482,9 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	background-position:center center;
 	background-size:cover;
 	opacity:0;
-	transition:opacity 1.2s ease;
 	pointer-events:none;
 }
 .bgphoto.on{ opacity:1; }
-
-/* ---------- a stronger foot to the picture, so the dock's icons keep their contrast
-             over a bright photograph ---------- */
-#appbar::after{
-	background:linear-gradient(to top,
-		rgba(0,0,0,0.94) 0%,
-		rgba(0,0,0,0.84) 14%,
-		rgba(0,0,0,0.60) 32%,
-		rgba(0,0,0,0.26) 58%,
-		rgba(0,0,0,0.00) 100%);
-}
 
 /* ---------- one floating name for the icon you are on (js/tooltip.js) ----------
    The dock no longer prints a caption under every icon, so it reads as artwork. */
@@ -622,7 +534,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	width:6.2vh;
 	height:6.2vh;
 	border-radius:26%;
-	background-color:rgba(255,255,255,0.13);
 	border:1px solid rgba(255,255,255,0.18);
 	box-shadow:0 0.8vh 2vh rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
 	transition:background-color .11s ease, border-color .11s ease, opacity .11s ease;
@@ -631,7 +542,6 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
 	width:72%;
 	height:72%;
 	border-radius:0;
-	filter:drop-shadow(0 1px 2px rgba(0,0,0,0.55));
 }
 .qchip.qoff{ opacity:0.42; }
 .qchip:hover, .qchip.dfocus{
@@ -653,7 +563,6 @@ body.photomode.nightwall #dimnight{ opacity:0.45; }
 	grid-template-columns:none;
 	left:0;
 	width:100vw;
-	bottom:calc(var(--barh) + 9.4vh);
 	justify-content:center;
 	align-items:center;
 	gap:0.9vw;
@@ -667,7 +576,6 @@ body.photomode.nightwall #dimnight{ opacity:0.45; }
 	font-weight:700;
 	letter-spacing:0.09em;
 	text-transform:uppercase;
-	color:rgb(var(--accent));
 }
 #recentrow .appitem{
 	display:flex;
@@ -677,7 +585,6 @@ body.photomode.nightwall #dimnight{ opacity:0.45; }
 	width:auto;
 	padding:0.6vh 1.2vw 0.6vh 0.6vh;
 	border-radius:99px;
-	background-color:rgba(16,18,26,0.58);
 	border:1px solid rgba(255,255,255,0.16);
 	contain:none;
 }
@@ -710,7 +617,6 @@ body.photomode.nightwall #dimnight{ opacity:0.45; }
 	display:none;
 	position:fixed;
 	left:50%;
-	top:22vh;
 	transform:translateX(-50%);
 	width:62vw;
 	box-sizing:border-box;
@@ -864,13 +770,11 @@ body.idle #dimidle{ opacity:var(--idledark,0.7); }
 	background:none;
 	border:none;
 	border-radius:1vh;
-	transition:background-color .11s ease;
 }
 #homesettings svg{
 	display:block;
 	width:100%;
 	height:100%;
-	fill:currentColor;
 	filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
 }
 #homesettings:hover, #homesettings.dfocus{ background-color:rgba(var(--accent),0.5); }
@@ -891,7 +795,6 @@ body.idle #dimidle{ opacity:var(--idledark,0.7); }
 	margin-top:1vh;
 	font-size:1.75vh;
 	font-variant-numeric:tabular-nums;
-	opacity:0.72;
 }
 
 /* ---------- environment chips: air, pollen, UV ----------
@@ -1112,17 +1015,16 @@ body.idle #dimidle{ opacity:var(--idledark,0.7); }
 .tvstabs{ display:flex; flex-wrap:wrap; gap:0.6vw; margin-bottom:1.6vh; }
 .tvsrow{
 	display:flex;
-	align-items:center;
 	justify-content:space-between;
 	gap:1.5vw;
 	padding:1.1vh 0;
 	border-bottom:1px solid rgba(255,255,255,0.08);
 }
 .tvsrow:last-child{ border-bottom:none; }
-.tvshead{ display:flex; flex-direction:column; min-width:0; flex:1 1 auto; }
+.tvshead{ display:flex; flex-direction:column; }
 .tvslabel{ font-size:2.1vh; font-weight:600; }
 .tvshelp{ margin-top:0.3vh; font-size:1.6vh; opacity:0.62; line-height:1.3; }
-.tvsbuttons{ display:flex; flex-wrap:wrap; gap:0.5vw; flex:0 0 auto; justify-content:flex-end; }
+.tvsbuttons{ display:flex; flex-wrap:wrap; gap:0.5vw; }
 .tvsbuttons .sstatus{ font-size:1.7vh; opacity:0.6; }
 /* the pane lays children out as a wrapping flex row, so the whole block needs to claim a line */
 .tvswrap{ display:block; width:100%; flex:1 1 100%; }
@@ -1160,4 +1062,223 @@ body.idle #dimidle{ opacity:var(--idledark,0.7); }
 }
 /* the key field sits on its own row under the network it belongs to */
 .tvsrow .stext{ flex:1 1 auto; min-width:24vw; font-size:2vh; padding:1vh 1.2vw; }
+/* ======================================================================
+   The Editorial look (was editorial.css). Every rule is scoped to html.look-editorial, so none
+   of it applies until Settings > Clock > Look turns that class on.
+   ====================================================================== */
+/*SPDX-License-Identifier: GPL-3.0-or-later*/
+/* Copyright (C) 2026 the OpenHome contributors */
+/* The "Editorial" look, chosen in Settings > Clock > Look.
+ *
+ * Every rule is scoped to html.look-editorial, so the whole sheet switches off with one class
+ * and the original appearance is left untouched underneath. It loads after theme.css.
+ *
+ * The chrome dissolves: the dock loses its bar and the icons sit on the photograph behind a
+ * gradient that separates them from it. The clock is large and thin, the date is spaced small
+ * capitals. The TV's inputs stand in a column down the left edge and the settings and info
+ * buttons in a matching one on the right - all three the same size, all resting on the same
+ * baseline as the app icons. The drawer becomes a single layer over a dimmed picture instead
+ * of two opaque panels.
+ */
+/* ---------------------------------------------------------------- the home screen */
+/* box-sizing is content-box here, so side padding is ADDED to the width and shoves the dock
+   off centre - 77px to the right, when this was first tried. Every rule below that adds
+   padding sets border-box with it. */
+html.look-editorial #appbar{
+	background:transparent !important;
+	box-shadow:none !important;
+	border:0 !important;
+	box-sizing:border-box !important;
+	padding:0 4vw 2.6vh !important;
+}
+html.look-editorial #appbar .appitem{
+	border-radius:1.8vh !important;
+	box-shadow:0 1.2vh 3vh rgba(0,0,0,0.55) !important;
+}
+/* A scrim rather than a bar: it lifts the icons off a busy photograph without drawing a box
+   around them. */
+html.look-editorial #maindiv::after{
+	content:"";
+	position:fixed;
+	left:0; right:0; bottom:0;
+	height:30vh;
+	background:linear-gradient(to top, rgba(0,0,0,0.62), rgba(0,0,0,0.28) 42%, transparent);
+	pointer-events:none;
+	z-index:3;
+}
+html.look-editorial #statusbar{
+	background:transparent !important;
+	border:0 !important;
+	box-shadow:none !important;
+	text-shadow:0 2px 10px rgba(0,0,0,0.9) !important;
+	opacity:0.72 !important;
+}
+/* The rest of this block uses a tight shadow - the date and the temperature are both
+   "0 2px 8px". A wide one here read as if the clock floated on a different layer, and at
+   weight 100 it spread grey haze around strokes only a couple of pixels thick. Same family,
+   a little stronger because the type is ten times the size. */
+html.look-editorial #clocktime{
+	font-weight:100 !important;
+	letter-spacing:-0.045em !important;
+	font-size:19vh !important;
+	line-height:0.86 !important;
+	text-shadow:0 2px 12px rgba(0,0,0,0.7) !important;
+}
+html.look-editorial #clocks{ opacity:0.35 !important; }
+html.look-editorial #clockdate{
+	text-transform:uppercase !important;
+	letter-spacing:0.22em !important;
+	font-size:1.9vh !important;
+	font-weight:600 !important;
+	opacity:0.78 !important;
+}
+html.look-editorial #weathertemp{ font-weight:200 !important; }
+/* ---------------------------------------------------------------- the two edge columns
+   The inputs stand down the left, the settings and info buttons down the right, and all of
+   them end level with the bottom of the app icons.
+   Careful which bottom: .appitem's box runs to 1066px because it reserves room for a name
+   that is hidden here, while the icon you actually see ends at 1056. Matching the box left
+   the columns floating 18px high. 1080-1056 = 24px = 2.22vh. */
+html.look-editorial #quickrow{
+	position:fixed !important;
+	left:2.6vw !important; right:auto !important;
+	bottom:2.22vh !important;
+	width:auto !important;
+	flex-direction:column-reverse !important;
+	align-items:center !important;
+	gap:1vh !important;
+	background:transparent !important;
+	border:0 !important;
+	padding:0 !important;
+	z-index:6 !important;
+}
+html.look-editorial .qchip,
+html.look-editorial #infobtn,
+html.look-editorial #homesettings{
+	width:6.2vh !important; height:6.2vh !important; min-width:6.2vh !important;
+	/* darker than the old 0.38 to stand in for the blur, which re-blurred the moving wallpaper
+	   behind these buttons on every frame, on the home screen, all the time */
+	background:rgba(10,12,18,0.58) !important;
+	border:1px solid rgba(255,255,255,0.14) !important;
+	border-radius:1.4vh !important;
+	box-shadow:0 0.8vh 2vh rgba(0,0,0,0.45) !important;
+	opacity:1 !important;
+}
+html.look-editorial .qchip.qlive{
+	border-color:rgba(var(--accent),0.75) !important;
+	box-shadow:0 0 2vh rgba(var(--accent),0.35), 0 0.8vh 2vh rgba(0,0,0,0.45) !important;
+}
+/* The gear on the home screen is #homesettings. #settingsbtn is a different button that lives
+   inside #drawertools and measures 0x0 until the drawer opens, so styling that one does
+   nothing at all. */
+html.look-editorial #infobtn{
+	position:fixed !important;
+	right:2.6vw !important; left:auto !important;
+	bottom:2.22vh !important; top:auto !important;
+	z-index:6 !important;
+}
+html.look-editorial #homesettings{
+	position:fixed !important;
+	right:2.6vw !important; left:auto !important;
+	bottom:9.4vh !important; top:auto !important;
+	z-index:6 !important;
+}
+/* All three controls are the same box, so the drawing inside them has to be the same size
+   too - the glyphs were at 70% of the chip while these filled their whole content box, and
+   the two columns did not match. */
+html.look-editorial #infobtn svg,
+html.look-editorial #homesettings svg,
+html.look-editorial #homesettings img,
+html.look-editorial .qchip .qglyph{
+	width:64% !important; height:64% !important;
+	opacity:0.88 !important;
+}
+html.look-editorial #infobtn,
+html.look-editorial #homesettings,
+html.look-editorial .qchip{
+	display:flex !important; align-items:center !important; justify-content:center !important;
+	padding:0 !important;
+}
+/* ---------------------------------------------------------------- the app drawer
+   Dimming the picture behind the drawer took several wrong turns. The wallpaper layers sit
+   BEFORE the drawer's checkbox in the document, so the "#realappbarbtu:checked ~ ..." pattern
+   main.css uses cannot reach them; a scrim hung off #appluncher is clipped to that element's
+   box, because it clips its content; and one hung off #drawertools lands above the drawer
+   rather than behind it, because #drawertools sits in a stacking context of its own.
+   A filter on the video worked but was the expensive way: it pulls the video off the hardware
+   plane and the GPU recomposites the 4K picture every frame while the drawer is open. Now
+   main.js puts .draweropen on body and #dimdrawer (index.html, styled in theme.css) fades in
+   over the wallpaper - about the old brightness(0.22). */
+html.look-editorial body.draweropen #dimdrawer{ opacity:0.78; }
+/* with the picture carrying the depth, the two opaque panels are not needed */
+html.look-editorial body.draweropen #appluncher,
+html.look-editorial body.draweropen #folderbar{
+	background:transparent !important;
+	box-shadow:none !important;
+	border:0 !important;
+}
+/* The category chips are button.chip with a span.chipicon inside - not .hrtile. The "Apps"
+   title repeated what the drawer obviously is, so it goes; the pills are centred over the
+   tiles and made smaller, since the row is a filter rather than the point of the screen. */
+html.look-editorial #folderbar{
+	background:transparent !important;
+	box-sizing:border-box !important;
+	justify-content:center !important;
+}
+html.look-editorial #folderbar::before{ content:"" !important; display:none !important; }
+html.look-editorial #folderbar .chip{
+	/* a plain tint: over the darkened wallpaper it reads the same as the blur it replaces */
+	background:rgba(255,255,255,0.09) !important;
+	border:1px solid rgba(255,255,255,0.14) !important;
+	box-shadow:0 0.4vh 1.2vh rgba(0,0,0,0.3) !important;
+	font-size:1.9vh !important;
+	padding:0.7vh 1.3vw !important;
+	border-radius:2.4vh !important;
+	gap:0.5vw !important;
+}
+html.look-editorial #folderbar .chip.on{
+	background:rgba(var(--accent),0.92) !important;
+	border-color:transparent !important;
+	color:#fff !important;
+}
+/* the folder glyph only made every pill wider */
+html.look-editorial #folderbar .chipicon{ display:none !important; }
+html.look-editorial #folderbar .chip small,
+html.look-editorial #folderbar .chip .count{ opacity:0.5 !important; }
+html.look-editorial #appluncher{
+	background:transparent !important;
+	box-shadow:none !important;
+	border:0 !important;
+	backdrop-filter:none !important;
+	-webkit-backdrop-filter:none !important;
+}
+/* A row track is --menutile * --menurow tall. At the stock 2.03 that is 234px while a tile
+   measures 155, so every row carried ~79px of empty space and the second row fell far below
+   the first. 1.42 leaves a few pixels of slack and no more.
+   With no column gap the grid packed sixteen tracks across and every app landed in one
+   cramped row; 2.2vw leaves twelve to a row with air between them. */
+html.look-editorial #appluncher{
+	--menurow:1.42 !important;
+	row-gap:1.1vh !important;
+	column-gap:2.2vw !important;
+}
+/* "Streaming" reads as "treaming" in the stock look: the label box is 95px, the word needs
+   100, and a centred nowrap line loses two and a half pixels off each end. Letting it spill
+   into the gap between tiles costs nothing, because the gap is far wider than the overflow. */
+html.look-editorial #appluncher .appname{
+	overflow:visible !important;
+	text-overflow:clip !important;
+	margin-top:0.8vh !important;
+	margin-bottom:0.4vh !important;
+}
+/* No shadow on the drawer tiles. A shadow lifts an icon off a busy picture; the drawer dims
+   the picture to a flat dark field, so it separates nothing and only adds grime under every
+   tile. The dock keeps its shadow, because there the icons do sit on the photograph. */
+html.look-editorial #appluncher .appitem img{ filter:none !important; }
+html.look-editorial #appluncher .appitem{ border-radius:1.6vh !important; }
+html.look-editorial #drawertools button{
+	background:rgba(255,255,255,0.10) !important;
+	border:1px solid rgba(255,255,255,0.14) !important;
+	border-radius:3vh !important;
+}
 

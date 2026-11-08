@@ -274,7 +274,7 @@ function applysizes(){
 
 // make the launcher match `prefs`
 function applyprefs(){
-	// one class, and the whole editorial.css sheet switches on or off
+	// one class, and the whole Editorial section of theme.css switches on or off
 	document.documentElement.classList.toggle("look-editorial",prefs.look==="editorial");
 	applysizes();
 	maindiv.classList.toggle("hide-bar-names",!prefs.barNames);

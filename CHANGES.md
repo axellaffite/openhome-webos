@@ -193,7 +193,7 @@ would be wrong for everybody outside one country. Reading the `time` category is
 ordinary app ("Access denied"), so it goes through the root service, and without root the search
 box is still the way in. A location you chose is never overwritten.
 
-### A second look, and the default - `src/css/editorial.css` (new)
+### A second look, and the default - `src/css/editorial.css` (new; now the last section of `theme.css`)
 
 **Editorial**, chosen in Settings > Clock > Look, and the default from 1.1.0. Every rule in the
 sheet is scoped to `html.look-editorial`, so the whole thing switches off with one class and the
