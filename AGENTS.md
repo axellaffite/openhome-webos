@@ -85,11 +85,23 @@ app for the Home button. On webOS 10.3 the setting is accepted at boot and lost 
 
 ## Releases and git
 
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
+  `<type>(<optional scope>): <description>`, lowercase, imperative, no trailing period, with a
+  short body saying why (and the measurement, for performance work). Types: `feat`, `fix`,
+  `perf`, `refactor`, `test`, `docs`, `style`, `build`, `ci`, `chore`. Scopes are the area
+  touched, e.g. `dock`, `drawer`, `appmanager`, `settings`, `remote`, `css`, `scripts`, `tooling`.
+  A change that breaks something users rely on gets `!` after the type and a `BREAKING CHANGE:`
+  footer. Examples:
+  - `perf(drawer): keep a GPU layer per icon so held arrows keep up`
+  - `fix(home): reset the screen when Home is pressed while OpenHome is in front`
+  - `test(remote): cover pickneighbor edge tolerance`
 - A release bumps `"version"` in `src/appinfo.json` and `APP_RELEASE` in `src/js/about.js`, in a
-  commit titled `OpenHome X.Y.Z`, then an annotated tag `vX.Y.Z` made with
+  commit titled `chore(release): OpenHome X.Y.Z`, then an annotated tag `vX.Y.Z` made with
   `git tag -a --cleanup=verbatim` so the markdown headings of the notes survive.
-- Commit titles are plain sentences describing the problem or outcome, not `feat:` prefixes,
-  with a short body. Upstream PRs go from a separate branch based on `origin/main`.
+- Commits made before this rule use plain-sentence titles; leave history as it is.
+- Upstream (`devic021`) does not use Conventional Commits: its titles are plain sentences
+  describing the problem or outcome. A PR meant for upstream goes from a separate branch based on
+  `origin/main` and follows upstream's style, not this one.
 - Remotes: `origin` is upstream (`devic021`), `fork` is this fork. GitHub Actions workflows are
   not enabled on the fork, so pushing a tag builds no release.
 
