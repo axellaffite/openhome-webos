@@ -255,6 +255,9 @@ file that does not parse leaves a blank home screen recoverable only over SSH. `
 times, how far the focus lags behind the key presses, layouts, style recalculations and script
 time, for the dock, the drawer and the Home button. `--save` keeps a run and `--compare` sets a
 later one beside it, so a change can be checked on the set before it ships.
+`node --test test/` runs the unit tests, with nothing to install: the remote's neighbour picking,
+the app manager's carrying rules and the All apps order. `test/load.js` runs the launcher's own
+scripts in a sandbox, so the tests exercise the shipped code rather than a copy of it.
 
 ---
 
