@@ -117,7 +117,8 @@ const SETTINGS_SCHEMA=[
 		{key:"customSeconds",label:t("Photo duration"),type:"choice",default:60,options:[[20,"20 s"],[30,"30 s"],[60,"1 min"],[120,"2 min"]],show:(p) => p.videoSource==="custom" || p.videoSource==="photos"}
 	]},
 	{id:"screen",title:t("Screen"),icon:"monitor",items:[
-		{key:"statusShow",label:t("Status strip"),type:"choice",default:"full",
+		// Off by default on this fork: the strip is a choice, not something every home screen needs.
+		{key:"statusShow",label:t("Status strip"),type:"choice",default:"off",
 			// not t("Full"): that string is already the full weekday name, where Serbian wants
 			// "Pun", which reads as nonsense against a strip
 			options:[["full",t("Everything")],["compact",t("Icon only")],["off",t("Off")]],
