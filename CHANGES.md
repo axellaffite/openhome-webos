@@ -251,6 +251,10 @@ rebuilt; building both in the same job makes that impossible.
 `deploy.sh` syntax-checks every JavaScript file with `node --check` *before* sending it, because a
 file that does not parse leaves a blank home screen recoverable only over SSH. `cdp.js` and
 `shots.js` drive and photograph the running launcher over the Chrome DevTools Protocol.
+`perf.js` plays the remote over the same protocol and measures what the TV does with it: frame
+times, how far the focus lags behind the key presses, layouts, style recalculations and script
+time, for the dock, the drawer and the Home button. `--save` keeps a run and `--compare` sets a
+later one beside it, so a change can be checked on the set before it ships.
 
 ---
 
