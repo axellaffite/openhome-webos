@@ -293,6 +293,14 @@ body,#maindiv,#prefetchmaindiv{ font-family:"Manrope",PlusJakartaSans,sans-serif
    frame of each run: 200 - 233 ms before, 50 - 67 ms with the layer alone, 33 ms with both.
    Opening the drawer: 217 - 233 ms before, 117 - 133 ms after. The dock is unchanged. */
 #appluncher{ will-change:transform; }
+/* Held arrows: the remote repeats every ~50 ms, and each move starts a zoom on one icon and ends
+   one on another. Without a layer of their own, every zooming icon was promoted for its
+   transition and dropped after, and the focus fell 150 - 300 ms behind by the end of a row.
+   With permanent layers, as in the dock: a press every 30 ms, worst frame 16.8 ms, focus never
+   more than 33 ms behind (against 67 - 217 ms and 68 - 365 ms without). ~0.5 MB of GPU memory per
+   icon on screen; tiles of other categories are not in the page, so they cost nothing.
+   Folder tiles' icons carry .appicon too. */
+#appluncher .appicon{ will-change:transform; }
 #appluncher .appitem:hover .appicon, #appluncher .appitem.dfocus .appicon{
 	box-shadow:
 		inset 0 0 0 0.3vh rgba(var(--accent),0.95),
