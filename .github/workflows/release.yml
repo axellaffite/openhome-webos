@@ -99,13 +99,14 @@ jobs:
           ls -l dist
 
       - name: Install the manifest generator
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # The asset is found by matching its name rather than by composing a URL from a
-          # hard-coded version, which would quietly 404 the day they publish a new one.
-          URL=$(curl -sL https://api.github.com/repos/webosbrew/dev-toolbox-cli/releases/latest \
-            | python3 -c "import json,sys;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if 'gen-manifest' in a['name'] and a['name'].endswith('_amd64.deb')][0])")
-          echo "fetching $URL"
-          curl -sLo gen-manifest.deb "$URL"
+          # Through gh, with the job's token: an anonymous call to the GitHub API shares the
+          # runners' rate limit, and the 1.4.11 run got a rate-limit reply instead of the release.
+          # The asset is matched by name rather than a hard-coded version, which would quietly 404
+          # the day they publish a new one.
+          gh release download -R webosbrew/dev-toolbox-cli -p '*gen-manifest*_amd64.deb' -O gen-manifest.deb
           sudo dpkg -i gen-manifest.deb
           # The package installs /usr/bin/webosbrew-gen-manifest - note the name is NOT the
           # webosbrew-toolbox-gen-manifest the published guide calls it.
