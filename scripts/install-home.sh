@@ -13,7 +13,7 @@ set -e
 TV=""
 KEY="$HOME/.ssh/lgtv"
 UNDO=""
-APP=/media/developer/apps/usr/palm/applications/io.github.devic021.openhome
+APP=/media/developer/apps/usr/palm/applications/io.github.axellaffite.openhome
 INITD=/var/lib/webosbrew/init.d
 
 # --undo may come in any position, so the arguments are walked rather than indexed

@@ -15,7 +15,7 @@
 # again every 30 s for ten minutes, in the background, which outlasts the rest of the boot.
 #
 # `logger` reaches no log this set keeps, so every attempt is written to $LOG instead.
-APPID="io.github.devic021.openhome"
+APPID="io.github.axellaffite.openhome"
 LOG=/var/lib/webosbrew/openhome-home.log
 REAPPLY_EVERY=30
 REAPPLY_FOR=600

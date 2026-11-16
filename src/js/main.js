@@ -16,7 +16,7 @@ let carrying=null;
 let droptimer=null;
 	  let noappperm=true;
 	  let turstedapp=false,rooted=false;
-let appid='io.github.devic021.openhome'
+let appid='io.github.axellaffite.openhome'
 let appdir='/media/developer/apps/usr/palm/applications/'+appid;
 
  

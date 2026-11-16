@@ -1,50 +1,95 @@
-# Build the installable package when a version tag is pushed, and attach it to the release
-# together with the manifest the Homebrew Channel reads.
+# Release every push to main that changes the app: build the package, tag it, and publish it with the
+# manifest the Homebrew Channel reads. The launcher's own updater (src/js/updater.js) installs from
+# these releases, so a merge to main reaches the TV without anyone tagging anything.
 #
-# Why this is automated rather than done by hand: the manifest carries the package's SHA-256 and
-# its exact byte size. Both describe one specific .ipk, so a manifest written by hand goes stale
-# the moment the package is rebuilt, and the Homebrew Channel then refuses the download. Building
-# both in the same job makes that impossible.
+# The version: the patch number after the newest v* tag (1.4.8 -> 1.4.9). To move the minor or major
+# number, raise "version" in src/appinfo.json above the newest tag and that version is used instead.
+# The computed version is written into this build only (appinfo.json and APP_RELEASE in about.js),
+# never committed back, so main is never pushed to by CI; the tags are the record of what shipped.
 #
-# The manifest's ipkUrl is only the file name, so the two files must sit side by side in the same
-# release - which is what the upload step does.
-
-# Writing the notes: `git tag -a vX.Y.Z --cleanup=verbatim -F -`. Without --cleanup=verbatim git
-# strips every line beginning with "#" as a comment, which silently removes all the markdown
-# headings from the release notes.
+# Why the build is automated rather than done by hand: the manifest carries the package's SHA-256 and
+# its exact byte size. Both describe one specific .ipk, so a manifest written by hand goes stale the
+# moment the package is rebuilt, and the Homebrew Channel then refuses the download.
 
 name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    paths:
+      - "src/**"      # docs, tests and tooling alone do not make a release
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# two quick merges must not both read the same newest tag and race for the same version
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 env:
-  APP_ID: io.github.devic021.openhome
+  APP_ID: io.github.axellaffite.openhome    # the installed package id: changing it orphans every existing install
 
 jobs:
-  package:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # tags, so a manual run can find the newest one
+          fetch-depth: 0        # every tag, to find the newest and to write the notes since it
 
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Check every script parses
+      - name: Check every script parses, and run the tests
         # A file that does not parse would install happily and leave a blank home screen, which is
-        # recoverable only over SSH. Cheaper to catch here than on someone's television.
+        # recoverable only over SSH - and with the updater, it would reach every TV on its own.
         run: |
-          for f in src/js/*.js src/js/lib/*/*.js; do node --check "$f"; done
           python3 -c "import json;json.load(open('src/appinfo.json'))"
+          find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          node --test test/
+
+      - name: Pick the version
+        id: version
+        run: |
+          LAST=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          LAST=${LAST#v}
+          SOURCE=$(python3 -c "import json;print(json.load(open('src/appinfo.json'))['version'])")
+          VERSION=$(python3 - "$LAST" "$SOURCE" <<'EOF'
+          import sys
+          last, source = sys.argv[1] or "0.0.0", sys.argv[2]
+          parse = lambda v: tuple(int(p) for p in v.split("."))
+          if parse(source) > parse(last):
+              print(source)
+          else:
+              major, minor, patch = parse(last)
+              print(f"{major}.{minor}.{patch + 1}")
+          EOF
+          )
+          echo "newest tag: ${LAST:-none}, appinfo.json: $SOURCE, releasing: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "last=$LAST" >> "$GITHUB_OUTPUT"
+
+      - name: Write the version into this build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python3 - <<'EOF'
+          import os, re
+          version = os.environ["VERSION"]
+          def stamp(path, pattern, replacement):
+              text = open(path).read()
+              new, count = re.subn(pattern, replacement, text, count=1)
+              if count != 1:
+                  raise SystemExit(f"{path}: version not found")
+              open(path, "w").write(new)
+          stamp("src/appinfo.json", r'"version":\s*"[^"]*"', f'"version": "{version}"')
+          stamp("src/js/about.js", r'const APP_RELEASE="[^"]*"', f'const APP_RELEASE="{version}"')
+          EOF
+          grep -n '"version"' src/appinfo.json
+          grep -n 'const APP_RELEASE' src/js/about.js
 
       - name: Build the package
         run: |
@@ -63,8 +108,7 @@ jobs:
           curl -sLo gen-manifest.deb "$URL"
           sudo dpkg -i gen-manifest.deb
           # The package installs /usr/bin/webosbrew-gen-manifest - note the name is NOT the
-          # webosbrew-toolbox-gen-manifest the published guide calls it. Fail here, with a clear
-          # message, if that ever changes again.
+          # webosbrew-toolbox-gen-manifest the published guide calls it.
           command -v webosbrew-gen-manifest
 
       - name: Write the manifest
@@ -78,42 +122,24 @@ jobs:
             --output "dist/${APP_ID}.manifest.json"
           cat "dist/${APP_ID}.manifest.json"
 
-      - name: Attach both to the release
+      - name: Tag and publish the release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          LAST: ${{ steps.version.outputs.last }}
         run: |
-          # A tag push gives the tag; a manual run gives a branch, so the newest tag is used
-          TAG="${GITHUB_REF_NAME}"
-          case "${GITHUB_REF}" in refs/tags/*) ;; *) TAG=$(git describe --tags --abbrev=0) ;; esac
-          # --generate-notes builds the body out of merged pull requests, which gives a thin
-          # release, so the annotated tag's own message is used instead.
-          #
-          # actions/checkout does not keep the annotation: the tag arrives as a plain ref to the
-          # commit, and `git tag -l --format='%(contents:body)'` then reads the COMMIT message.
-          # Release 1.2.0 went out with "OpenHome 1.2.0" as its whole body for exactly that
-          # reason, which is the merge commit's second line. So the tag object is fetched back
-          # before anything reads it, and the type is checked rather than assumed.
-          if [ "$(git cat-file -t "$TAG" 2>/dev/null)" != "tag" ]; then
-            git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}" || true
-          fi
-          if [ "$(git cat-file -t "$TAG" 2>/dev/null)" = "tag" ]; then
-            NOTES=$(git tag -l --format='%(contents:body)' "$TAG")
-          else
-            echo "::warning::$TAG is not an annotated tag, so there are no notes to publish"
-            NOTES=""
-          fi
-          # One line is the shape a commit subject takes, not release notes. Treated as empty so
-          # a wrong body can never be published quietly.
-          if [ "$(printf '%s' "$NOTES" | grep -c .)" -lt 2 ]; then
-            echo "::warning::the tag message is one line; falling back to generated notes"
-            NOTES=""
-          fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            :
-          elif [ -n "$(echo "$NOTES" | tr -d '[:space:]')" ]; then
-            echo "$NOTES" > /tmp/notes.md
-            gh release create "$TAG" --title "OpenHome ${TAG#v}" --notes-file /tmp/notes.md
-          else
-            gh release create "$TAG" --title "OpenHome ${TAG#v}" --generate-notes
-          fi
-          gh release upload "$TAG" dist/*.ipk "dist/${APP_ID}.manifest.json" --clobber
+          # the notes are the commit titles since the previous release (Conventional Commits, see AGENTS.md)
+          RANGE=HEAD
+          if [ -n "$LAST" ]; then RANGE="v${LAST}..HEAD"; fi
+          {
+            echo "## Changes"
+            echo
+            git log --no-merges --format='- %s' "$RANGE"
+          } > notes.md
+          cat notes.md
+          # --target makes GitHub create the tag on this exact commit
+          gh release create "v${VERSION}" \
+            --target "$GITHUB_SHA" \
+            --title "OpenHome ${VERSION}" \
+            --notes-file notes.md \
+            dist/*.ipk "dist/${APP_ID}.manifest.json"

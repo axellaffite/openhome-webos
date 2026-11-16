@@ -28,7 +28,7 @@ if (typeof WebSocket === "undefined") {
 const fs = require("fs");
 const TV = process.env.TV || "192.168.1.239";
 const PORT = process.env.PORT || 9998;
-const APP_ID = process.env.APP_ID || "io.github.devic021.openhome";
+const APP_ID = process.env.APP_ID || "io.github.axellaffite.openhome";
 const KEY = { left: 37, up: 38, right: 39, down: 40 };
 const KEYNAME = { 37: "ArrowLeft", 38: "ArrowUp", 39: "ArrowRight", 40: "ArrowDown" };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

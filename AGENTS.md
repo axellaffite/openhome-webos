@@ -44,7 +44,7 @@ the key `~/.ssh/lgtv`.
   `ssh host 'cmd'` and at boot. Always add `< /dev/null`.
 - **Installing a build:** `ares-package src -o <dir> --no-minify` (from `@webos-tools/cli`), copy
   the `.ipk` to `/tmp` on the TV, then
-  `luna-send -n 30 luna://com.webos.appInstallService/dev/install '{"id":"io.github.devic021.openhome","ipkUrl":"/tmp/x.ipk","subscribe":true}' < /dev/null`
+  `luna-send -n 30 luna://com.webos.appInstallService/dev/install '{"id":"io.github.axellaffite.openhome","ipkUrl":"/tmp/x.ipk","subscribe":true}' < /dev/null`
   and wait for state `installed`. The Homebrew Channel's installer only accepts http(s) URLs.
 - **`deploy.sh` copies files but does not reload the page**: its launch request only brings the
   running launcher to the front. Reload through DevTools (`location.reload()`) or install a package.
@@ -95,18 +95,25 @@ app for the Home button. On webOS 10.3 the setting is accepted at boot and lost 
   - `perf(drawer): keep a GPU layer per icon so held arrows keep up`
   - `fix(home): reset the screen when Home is pressed while OpenHome is in front`
   - `test(remote): cover pickneighbor edge tolerance`
-- A release bumps `"version"` in `src/appinfo.json` and `APP_RELEASE` in `src/js/about.js`, in a
-  commit titled `chore(release): OpenHome X.Y.Z`, then an annotated tag `vX.Y.Z` made with
-  `git tag -a --cleanup=verbatim` so the markdown headings of the notes survive.
+- Releases are automatic: every push to `main` that touches `src/` runs
+  `.github/workflows/release.yml`, which tests, builds, tags `vX.Y.Z` and publishes the `.ipk` and
+  manifest. The version is the newest tag's patch + 1, written into that build only (`main` keeps
+  the last hand-set version). For a minor or major bump, raise `"version"` in `src/appinfo.json`
+  above the newest tag in a `chore(release): OpenHome X.Y.Z` commit. The release notes are the commit
+  titles since the previous tag, so keep them readable.
+- The launcher updates itself from these releases (`js/updater.js`): a daily check, and an Update
+  button in Settings > About when rooted. **Anything merged to `main` reaches the TVs**, so a script
+  that does not parse means a blank home screen everywhere; the workflow refuses to release one.
 - Commits made before this rule use plain-sentence titles; leave history as it is.
 - Upstream (`devic021`) does not use Conventional Commits: its titles are plain sentences
   describing the problem or outcome. A PR meant for upstream goes from a separate branch based on
   `origin/main` and follows upstream's style, not this one.
-- Remotes: `origin` is upstream (`devic021`), `fork` is this fork. GitHub Actions workflows are
-  not enabled on the fork, so pushing a tag builds no release.
+- Remotes: `origin` is upstream (`devic021`), `fork` is this fork. This fork does not follow
+  upstream any more: its releases and updates come from `axellaffite/openhome-webos` only.
 
 ## What this fork changes on purpose
 
-The app manager (hold OK on a dock app; `DOCK_APPS = 10`, no dock paging), the status strip off
+Its own package id, `io.github.axellaffite.openhome` (upstream's is `io.github.devic021.openhome`), the
+self-updater, the app manager (hold OK on a dock app; `DOCK_APPS = 10`, no dock paging), the status strip off
 by default, All apps sorted A to Z, the Home key resetting the screen, and the reverts of
 upstream #20 and #24 described above. Check this list before syncing with upstream.

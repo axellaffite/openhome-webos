@@ -13,7 +13,7 @@
 # /var/lib/webosbrew/openlauncher-boot.orig, stop the watcher named by
 # /tmp/openhome-inputwatch.pid, and delete this file. install-home.sh --undo does all of it.
 
-APP_ID=io.github.devic021.openhome
+APP_ID=io.github.axellaffite.openhome
 STUB=/media/developer/apps/usr/palm/applications/$APP_ID/access/replace/appstub
 HOME_APP=/usr/palm/applications/com.webos.app.home
 ORIG=/var/lib/webosbrew/openlauncher-boot.orig

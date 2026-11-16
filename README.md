@@ -4,12 +4,13 @@ A replacement home screen for **rooted LG webOS TVs** that also puts **100+ of t
 settings** - the ones LG buries, and a few it never draws at all - into one place you can reach
 with the remote.
 
-OpenHome is a fork of [OpenLauncher](https://github.com/Shantil-K/OpenLauncher) by Shantil-K, not
-a different project by the same people - see [CHANGES.md](CHANGES.md) for what was added.
+This is a fork of [devic021's OpenHome](https://github.com/devic021/openhome-webos), thanks to
+whose work it exists, itself a fork of [OpenLauncher](https://github.com/Shantil-K/OpenLauncher)
+by Shantil-K - see [CHANGES.md](CHANGES.md) for what was added.
 Developed on an **LG 65UR78003LK, webOS 10.3.2 (SDK 10.3, Chromium 120)**. Every screenshot below
 is a real 3840x2160 capture off that TV, in the Editorial look it ships with.
 
-> **It has its own package id, `io.github.devic021.openhome`**, so it installs *beside*
+> **It has its own package id, `io.github.axellaffite.openhome`**, so it installs *beside*
 > OpenLauncher rather than over it - you can keep both and switch between them. Coming from
 > OpenLauncher, carry your configuration across with its **Settings → Backup → Export**, then
 > paste it into OpenHome's **Backup → Import**.
@@ -318,8 +319,8 @@ Three ways, easiest first.
 
 #### a. From a release - nothing to build
 
-Download `io.github.devic021.openhome_*.ipk` from
-[Releases](https://github.com/devic021/openhome-webos/releases), put it on a USB stick, and on the
+Download `io.github.axellaffite.openhome_*.ipk` from
+[Releases](https://github.com/axellaffite/openhome-webos/releases), put it on a USB stick, and on the
 TV use **Homebrew Channel → App Manager → Install from file**.
 
 No Node, no webOS CLI, no SSH. Every release is built and attached automatically.
@@ -327,12 +328,12 @@ No Node, no webOS CLI, no SSH. Every release is built and attached automatically
 #### b. With the webOS CLI - if you want to build it yourself
 
 ```bash
-git clone https://github.com/devic021/openhome-webos.git
+git clone https://github.com/axellaffite/openhome-webos.git
 cd openhome-webos
 npm install -g @webos-tools/cli
 ares-setup-device --add tv --info "host=<tv-ip>" --info "port=9922" --info "username=prisoner"
 ares-package src -o /tmp --no-minify
-ares-install --device tv /tmp/io.github.devic021.openhome_*.ipk
+ares-install --device tv /tmp/io.github.axellaffite.openhome_*.ipk
 ```
 
 Needs Developer Mode on the TV.
@@ -359,7 +360,7 @@ does not parse leaves a blank home screen, recoverable only over SSH - then relo
 ```bash
 ssh -i ~/.ssh/lgtv root@<tv-ip> \
   "luna-send -n 1 -f luna://com.webos.service.applicationManager/launch \
-   '{\"id\":\"io.github.devic021.openhome\"}' < /dev/null"
+   '{\"id\":\"io.github.axellaffite.openhome\"}' < /dev/null"
 ```
 
 Or just find it in the TV's app list.

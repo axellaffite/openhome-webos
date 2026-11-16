@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 9998;
 
 // webOS preloads other apps at boot - Netflix, YouTube and friends - and they are debuggable
 // too, so "the first page in the list" is whichever one happens to be first. Pick ours by name.
-const APP_ID = process.env.APP_ID || "io.github.devic021.openhome";
+const APP_ID = process.env.APP_ID || "io.github.axellaffite.openhome";
 function pickpage(list) {
 	const pages = list.filter((t) => t.type === "page" && t.webSocketDebuggerUrl);
 	const ours = pages.filter((t) => (t.url || "").indexOf(APP_ID) !== -1);

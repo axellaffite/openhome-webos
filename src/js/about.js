@@ -8,13 +8,13 @@ const APP_RELEASE="1.4.8";            // the GitHub release this build belongs t
 // This fork's own repository. "Check for updates" asks GitHub for ITS newest release and
 // the Project / Report a problem rows link here, so pointing it upstream would offer the
 // wrong releases and send bug reports to the wrong people.
-const GITHUB_REPO="devic021/openhome-webos";
-const GITHUB_API="https://api.github.com/repos/"+GITHUB_REPO+"/releases?per_page=1";   // per_page=1 of ALL releases: "latest" skips pre-releases
+const GITHUB_REPO="axellaffite/openhome-webos";   // this fork: updates come from its releases, not upstream's
+const UPSTREAM_REPO="devic021/openhome-webos";     // the OpenHome this fork grew out of, credited on the About page
 const LAST_BACKUP_KEY='openlauncher.lastbackup';
-const ABOUT_APP_ID="io.github.devic021.openhome";
+const ABOUT_APP_ID="io.github.axellaffite.openhome";
 
 // what has been looked up; each entry is filled in once (or again by Refresh) and the page is drawn again when it arrives
-let about={tv:undefined,backupfile:undefined,release:{state:"idle"}};
+let about={tv:undefined,backupfile:undefined};
 
 function aboutdate(value) {
 	const date=value instanceof Date?value:new Date(value);
@@ -121,30 +121,6 @@ async function loadaboutdata() {
 	if(settingstab==="about"){ renderpane(); }
 }
 
-// the internet is only used when you ask
-function checkupdates() {
-	about.release={state:"checking"};
-	renderpane();
-	fetch(GITHUB_API).then((response) => response.json()).then((list) => {
-		const latest=Array.isArray(list)?list[0]:null;
-		about.release=latest && latest.tag_name?{state:"ok",tag:latest.tag_name,date:latest.published_at,pre:!!latest.prerelease}:{state:"error"};
-	}).catch(() => {
-		about.release={state:"error"};
-	}).then(() => {
-		if(settingstab==="about"){ renderpane(); }
-	});
-}
-
-function aboutupdatetext() {
-	const release=about.release;
-	if(release.state==="checking"){ return t("Checking..."); }
-	if(release.state==="error"){ return t("GitHub unreachable"); }
-	if(release.state!=="ok"){ return t("Not checked"); }
-	const mine="v"+APP_RELEASE;
-	if(release.tag===mine){ return release.tag+t(" (this one), up to date"); }
-	return release.tag+t(" is out (you have ")+mine+")";
-}
-
 // every line of the page as [section, [[label, value], ...]], so the page and the tests read the same list
 function aboutsections() {
 	const app=(typeof applist!=="undefined" && applist)?applist.filter((each) => each.id===ABOUT_APP_ID)[0]:null;
@@ -170,7 +146,7 @@ function aboutsections() {
 	return [
 		[t("Launcher"),[
 			[t("Release"),"v"+APP_RELEASE],
-			[t("Package"),"io.github.devic021.openhome, "+(app && app.version?app.version:APP_RELEASE)],
+			[t("Package"),ABOUT_APP_ID+", "+(app && app.version?app.version:APP_RELEASE)],
 			[t("Last update"),updated || t("Unknown")],
 			[t("Running as"),aboutpermissions()+", "+(typeof applist!=="undefined" && applist?applist.length:0)+t(" apps found")]
 		]],
@@ -196,7 +172,8 @@ function aboutsections() {
 		["GitHub",[
 			[t("Project"),"github.com/"+GITHUB_REPO],
 			[t("Report a problem"),"github.com/"+GITHUB_REPO+"/issues"],
-			[t("Latest release"),aboutupdatetext()],
+			[t("Latest release"),updatetext()],
+			[t("Thanks to"),t("the work of ")+"github.com/"+UPSTREAM_REPO],
 			[t("Licence"),"GNU GPL v3"],
 			[t("Based on"),"QwQHome by exkc"]
 		]]
@@ -227,7 +204,9 @@ function renderabout(box) {
 	title.appendChild(el("small","aboutsub","v"+APP_RELEASE+t(" - a custom home screen for webOS TVs")));
 	head.appendChild(title);
 	const actions=el("div","aboutactions");
-	actions.appendChild(optionbutton(t("Check for updates"),false,() => checkupdates(),"download"));
+	const install=updatebutton();
+	if(install){ actions.appendChild(install); }
+	actions.appendChild(optionbutton(t("Check for updates"),false,() => checkforupdate(),"download"));
 	actions.appendChild(optionbutton(t("Refresh"),false,() => {
 		about.tv=undefined;
 		about.backupfile=undefined;

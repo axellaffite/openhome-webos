@@ -1,6 +1,6 @@
 # Submission for the Homebrew Channel's app repository.
 #
-# Copy this to  packages/io.github.devic021.openhome.yml  in a fork of
+# Copy this to  packages/io.github.axellaffite.openhome.yml  in a fork of
 # https://github.com/webosbrew/apps-repo  and open a pull request. Once it is merged, OpenHome
 # appears in the Homebrew Channel on the television itself, and installing it needs no computer.
 #
@@ -16,9 +16,9 @@
 #   anything outside the documented list is rejected
 
 title: OpenHome
-iconUri: https://raw.githubusercontent.com/devic021/openhome-webos/main/src/largeIcon.png
-detailIconUri: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/icon.png
-manifestUrl: https://github.com/devic021/openhome-webos/releases/latest/download/io.github.devic021.openhome.manifest.json
+iconUri: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/src/largeIcon.png
+detailIconUri: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/icon.png
+manifestUrl: https://github.com/axellaffite/openhome-webos/releases/latest/download/io.github.axellaffite.openhome.manifest.json
 category: launcher
 pool: main
 shortDescription: A home screen that also opens the settings LG hides
@@ -40,15 +40,15 @@ description: |
   A fork of [OpenLauncher](https://github.com/Shantil-K/OpenLauncher) by Shantil-K, itself based
   on QwQHome by exkc.
 screenshots:
-  - url: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/screenshots/preview/home.jpg
+  - url: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/screenshots/preview/home.jpg
     caption: Home screen with clock, weather and input shortcuts
-  - url: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/screenshots/preview/tv-privacy.jpg
+  - url: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/screenshots/preview/tv-privacy.jpg
     caption: Privacy settings LG's own menu does not show
-  - url: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/screenshots/preview/tv-picture.jpg
+  - url: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/screenshots/preview/tv-picture.jpg
     caption: Picture settings, per picture mode and input
-  - url: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/screenshots/preview/system.jpg
+  - url: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/screenshots/preview/system.jpg
     caption: System panel with network, CPU, storage and root health
-  - url: https://raw.githubusercontent.com/devic021/openhome-webos/main/docs/screenshots/preview/apps.jpg
+  - url: https://raw.githubusercontent.com/axellaffite/openhome-webos/main/docs/screenshots/preview/apps.jpg
     caption: All apps, with folders
 requirements:
   # The launcher uses async/await (ES2017). Chromium 53, which webOS 4.x ships, only reaches
