@@ -112,7 +112,18 @@ function loadaerial(entry) {
 	bgvideo.play().catch(()=>{});
 }
 
+// the first aerial after a launch plays from disk when js/aerialcache.js has one, so the wallpaper
+// appears at once; the rest stream
+let bgfromdisk=true;
+
 function nextaerial() {
+	const cached=bgfromdisk && typeof cachedaerial==="function"?cachedaerial():null;
+	bgfromdisk=false;
+	if(cached){
+		bgcurrent=cached;
+		loadaerial(cached);
+		return;
+	}
 	if(bgqueue.length===0){
 		bgqueue=shuffled(aerials);
 	}
@@ -287,7 +298,7 @@ function nowplaying() {
 		return {name:customcurrent.n,source:t("Custom, ")+customhost(customcurrent.u),video:customcurrent.kind==="video"};
 	}
 	if(bgmode==="aerials" && bgcurrent){
-		return {name:bgcurrent.n,source:bgcurrent.s+t(", streamed"),video:true};
+		return {name:bgcurrent.n,source:(bgcurrent.s || "OpenHome")+(bgcurrent.cached?t(", from the TV's disk"):t(", streamed")),video:true};
 	}
 	if(bgmode==="local"){
 		return {name:t("Built-in wallpaper loop"),source:t("Offline (built into the launcher)"),video:true};
@@ -312,6 +323,11 @@ function skipvideo() {
 
 function bgfailed() {
 	if(bgmode==="aerials"){
+		// a cached file that is gone or unreadable: stream instead, without counting it as a failure
+		if(bgcurrent && bgcurrent.cached){
+			nextaerial();
+			return;
+		}
 		// Apple's certificate chain isn't trusted everywhere, and plain http works for them
 		if(!applehttp && APPLE_HTTPS.test(bgcurrent.u)){
 			applehttp=true;

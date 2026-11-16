@@ -93,6 +93,8 @@ const SETTINGS_SCHEMA=[
 		{label:t("Video sources"),type:"custom",wide:true,show:(p) => p.videoSource==="online",
 			hint:t("Where the videos come from and how many there are per source. The list is from couchy-launcher; the videos stay on their own servers."),
 			render:(box) => rendersources(box)},
+		{key:"aerialCache",label:t("Enable video caching"),type:"choice",default:true,options:ON_OFF,show:(p) => p.videoSource==="online",
+			hint:t("Keeps 3 videos (1.5 GB at most) on the TV, so the wallpaper appears at once when the launcher opens. One new video a day, about 200 MB. Off deletes them.")},
 		{key:"customUrls",label:t("My wallpapers"),type:"custom",wide:true,default:[],show:(p) => p.videoSource==="custom",
 			hint:t("Links to videos (.mp4 .mov .mkv .webm) and photos (.jpg .png .webp). They play in random order."),
 			valid:(v) => Array.isArray(v) && v.length<=CUSTOM_MAX && v.every(validcustomurl),

@@ -118,6 +118,7 @@ app for the Home button. On webOS 10.3 the setting is accepted at boot and lost 
 ## What this fork changes on purpose
 
 Its own package id, `io.github.axellaffite.openhome` (upstream's is `io.github.devic021.openhome`), the
-self-updater, the app manager (hold OK on a dock app; `DOCK_APPS = 10`, no dock paging), the status strip off
+self-updater, the aerial cache (`js/aerialcache.js`: 3 videos, 1.5 GB at most, in
+`/media/developer/aerials`, so the wallpaper appears at once), the app manager (hold OK on a dock app; `DOCK_APPS = 10`, no dock paging), the status strip off
 by default, All apps sorted A to Z, the Home key resetting the screen, and the reverts of
 upstream #20 and #24 described above. Check this list before syncing with upstream.
