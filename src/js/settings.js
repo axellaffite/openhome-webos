@@ -218,6 +218,7 @@ function saveprefs(){
 	try {
 		localStorage.setItem(PREFS_KEY,JSON.stringify(changedprefs()));
 	} catch(e) {}
+	if(typeof scheduleautobackup==="function"){ scheduleautobackup(); }
 }
 
 function setpref(key,value){

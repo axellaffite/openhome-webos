@@ -104,6 +104,10 @@ app for the Home button. On webOS 10.3 the setting is accepted at boot and lost 
 - The launcher updates itself from these releases (`js/updater.js`): a daily check, and an Update
   button in Settings > About when rooted. **Anything merged to `main` reaches the TVs**, so a script
   that does not parse means a blank home screen everywhere; the workflow refuses to release one.
+- A (re)installed package starts with an empty localStorage. With root, `js/backup.js` keeps
+  `/media/developer/openlauncher-settings.json` current after every save and restores from it on
+  start when localStorage is empty; anything new worth keeping across updates belongs in `prefs` or
+  `settings`, which that file carries.
 - Commits made before this rule use plain-sentence titles; leave history as it is.
 - Upstream (`devic021`) does not use Conventional Commits: its titles are plain sentences
   describing the problem or outcome. A PR meant for upstream goes from a separate branch based on

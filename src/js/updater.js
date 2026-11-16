@@ -138,6 +138,8 @@ async function installupdate() {
 	if(update.state!=="available" || !rooted || !installable(release)){ return; }
 	update={state:"installing",release:release,step:t("Starting...")};
 	updaterender();
+	// the new package starts with an empty localStorage; the file is what it restores from
+	if(typeof writebackupnow==="function"){ await writebackupnow(); }
 	try {
 		await execasroot(relaunchcommand(release.version));
 	} catch(e) {

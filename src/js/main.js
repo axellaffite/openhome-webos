@@ -394,6 +394,7 @@ function savesettings(){
 	try {
 		localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
 	} catch(e) {}
+	if(typeof scheduleautobackup==="function"){ scheduleautobackup(); }
 }
 
 function pinnedids(){
@@ -645,6 +646,8 @@ render();
 }
 async function inithomescreen() {
 await initpermcheck();
+// an empty localStorage after a reinstall: bring the layout and settings back from the backup file first
+if(typeof restorefromfile==="function"){ await restorefromfile(); }
 loadsettings();
 // This is the path a real first launch takes: initpermcheck() fills applist and we come straight
 // here. reload() has the same call, but it only fires when the app list CHANGES later, so a
@@ -656,6 +659,7 @@ editbtn.addEventListener("click",toggleedit);
 realappbarbtu.addEventListener("change",drawerchanged);
 appbar.addEventListener("mouseenter",barhovered);
 render();
+if(typeof startautobackup==="function"){ startautobackup(); }
 
 }
 

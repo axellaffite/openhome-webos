@@ -181,3 +181,65 @@ function renderbackup(box,item){
 	box.appendChild(area);
 	if(backupmessage){ box.appendChild(el("div","sstatus",backupmessage)); }
 }
+
+// ---- keeping the backup file current, so a reinstall does not lose everything
+//
+// Everything the launcher remembers lives in the app's own localStorage, and webOS hands a
+// (re)installed app an empty one: an update or the package id change came back with the stock
+// dock and no weather, because the weather only shows once a location is set. The file above
+// sits outside the app and survives both. So with root it is rewritten a few seconds after every
+// change, and read back on start when localStorage comes up empty.
+const AUTOBACKUP_DELAY_MS=3000;   // a burst of changes (reordering the dock) makes one write, not one per move
+let autobackupready=false;        // stays false until start-up has looked for a restore: an empty
+                                  // fresh state must never overwrite a good file first
+let autobackuptimer=null;
+
+function storageempty(){
+	try { return localStorage.getItem(SETTINGS_KEY)===null && localStorage.getItem(PREFS_KEY)===null; } catch(e) { return false; }
+}
+
+// writes a parsed backup straight into localStorage, before anything has been loaded from it
+function restoreintostorage(parsed){
+	localStorage.setItem(PREFS_KEY,JSON.stringify(parsed.prefs));
+	localStorage.setItem(SETTINGS_KEY,JSON.stringify(parsed.layout));
+	// the layout already has its folders: first run must not build them again on top
+	localStorage.setItem(FIRSTRUN_KEY,new Date().toISOString().slice(0,10));
+}
+
+// called once at start, after the root check and before the layout is loaded; true if it restored
+async function restorefromfile(){
+	if(!rooted || !storageempty()){ return false; }
+	let text=null;
+	try { text=await readbackupfile(); } catch(e) {}
+	if(!text){ return false; }
+	const parsed=parsebackup(text);
+	if(parsed.error){ return false; }
+	try {
+		restoreintostorage(parsed);
+	} catch(e) {
+		return false;
+	}
+	loadprefs();
+	applyprefs();
+	return true;
+}
+
+function writebackupnow(){
+	if(!rooted){ return Promise.resolve(false); }
+	clearTimeout(autobackuptimer);
+	autobackuptimer=null;
+	return savebackupfile(makebackup()).catch(() => false);
+}
+
+// main.js and settings.js call this after every save
+function scheduleautobackup(){
+	if(!autobackupready || !rooted){ return; }
+	clearTimeout(autobackuptimer);
+	autobackuptimer=setTimeout(writebackupnow,AUTOBACKUP_DELAY_MS);
+}
+
+// from here on saves reach the file; one write straight away so it is current even if you never exported
+function startautobackup(){
+	autobackupready=true;
+	scheduleautobackup();
+}
