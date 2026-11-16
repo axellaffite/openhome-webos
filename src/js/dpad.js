@@ -176,7 +176,14 @@ function clearfocus() {
 	keyboardmode=false;
 }
 
-// where focus starts: the Apps button at home, the first app in the drawer, the selected tab in settings, ...
+// the first pinned app in the dock, past the Apps button (the label that opens the drawer); the Apps
+// button itself when nothing is pinned. Landing on the status strip's clock, the first thing on
+// screen, gave the first key press nothing useful to do.
+function firstdockapp(tiles) {
+	return tiles.filter((tile) => !tile.closest("label[for=realappbarbtu]"))[0] || tiles[0] || null;
+}
+
+// where focus starts: the first dock app at home, the first app in the drawer, the selected tab in settings, ...
 function defaultfocus(list) {
 	if(settingsisopen()){
 		const tab=list.filter((el) => el.classList.contains("stab") && el.classList.contains("on"))[0];
@@ -190,7 +197,8 @@ function defaultfocus(list) {
 	}
 	if(appmenuopen() || infoisopen()){ return list[0] || null; }
 	if(realappbarbtu.checked){ return within(appluncher,".appitem")[0] || list[0] || null; }
-	return list[0] || null;
+	const app=firstdockapp(within(appbar,".appitem"));
+	return app && list.indexOf(app)!==-1?app:list[0] || null;
 }
 
 // after something opened or closed (a panel, a menu, the drawer): if the focus ring is gone from the screen,
@@ -468,7 +476,7 @@ function initdpad() {
 	realappbarbtu.addEventListener("change",() => {
 		if(!keyboardmode){ return; }
 		const list=contextelements();
-		setfocus(realappbarbtu.checked?defaultfocus(list):(returnto && list.indexOf(returnto)!==-1?returnto:list[0] || null));
+		setfocus(realappbarbtu.checked?defaultfocus(list):(returnto && list.indexOf(returnto)!==-1?returnto:defaultfocus(list)));
 	});
 	window.addEventListener("keydown",onkey);
 	window.addEventListener("mousemove",onmouse,true);
