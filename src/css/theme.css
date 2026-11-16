@@ -1084,19 +1084,44 @@ body.idle #dimidle{ opacity:var(--idledark,0.7); }
 /* box-sizing is content-box here, so side padding is ADDED to the width and shoves the dock
    off centre - 77px to the right, when this was first tried. Every rule below that adds
    padding sets border-box with it. */
+/* The dock is one bar, like macOS's: a single translucent rounded panel, sized to the icons and
+   centred, floating just above the bottom edge. It replaces a soft drop shadow under each tile:
+   the tile is bigger than its icon, so every app sat on a faint rounded box of its own, a row of
+   containers that added nothing and mostly disappeared into the wallpaper.
+   Centred with left/right 0 and auto margins, not a transform: pixel shift owns #appbar's
+   transform. The height stays var(--barh), so the Recent row, the input chips and the drawer
+   tools above keep their places. No backdrop-filter (see AGENTS.md), so the panel is a plain
+   translucent fill. */
 html.look-editorial #appbar{
-	background:transparent !important;
-	box-shadow:none !important;
-	border:0 !important;
+	left:0 !important;
+	right:0 !important;
+	margin:0 auto !important;
+	width:max-content !important;
+	bottom:1.4vh !important;
 	box-sizing:border-box !important;
-	padding:0 4vw 2.6vh !important;
+	padding:1.4vh 1.1vw 0.6vh !important;
+	grid-template-rows:auto !important;
+	align-content:center;
+	background:rgba(18,20,28,0.42) !important;
+	border:1px solid rgba(255,255,255,0.14) !important;
+	border-radius:2.8vh !important;
+	box-shadow:none !important;
 }
 html.look-editorial #appbar .appitem{
 	border-radius:1.8vh !important;
-	box-shadow:0 1.2vh 3vh rgba(0,0,0,0.55) !important;
+	box-shadow:none !important;
 }
-/* A scrim rather than a bar: it lifts the icons off a busy photograph without drawing a box
-   around them. */
+/* the bottom scrim hangs off the dock, which is now only as wide as its icons: stretch it back
+   across the whole screen, down to the bottom edge the dock no longer touches */
+html.look-editorial #appbar::after{
+	left:50% !important;
+	right:auto !important;
+	width:100vw;
+	margin-left:-50vw;
+	bottom:-1.4vh;
+}
+/* A scrim rather than a bar: it lifts the icons, the clock and the Recent row off a busy
+   photograph without drawing a box around them. */
 html.look-editorial #maindiv::after{
 	content:"";
 	position:fixed;
