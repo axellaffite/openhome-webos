@@ -625,6 +625,7 @@ const I18N_SR={
 	"Licence":"Licenca",
 	"Based on":"Zasnovano na",
 	"That is not valid JSON.":"To nije ispravan JSON.",
+	"Paste a backup in the box first.":"Prvo zalijepite rezervu u polje.",
 	"That is not an OpenHome backup.":"To nije OpenHome rezerva.",
 	"That backup is from a newer version of the launcher.":"Ova rezerva je iz novije verzije launcher-a.",
 	". The same text is below.":". Isti tekst je ispod.",

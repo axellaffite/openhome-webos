@@ -4,6 +4,9 @@
 // JSON is shown in a text box to copy out, and text pasted into it can be imported.
 
 const BACKUP_FILE='/media/developer/openlauncher-settings.json';
+const BACKUP_TMP=BACKUP_FILE+'.tmp';           // written first, then renamed over BACKUP_FILE
+const BACKUP_INVALID=BACKUP_FILE+'.invalid';   // a file that could not be restored from, kept to look at
+const BACKUP_MISSING='OPENHOME-NO-BACKUP-FILE';  // what reading prints when there is no file
 const BACKUP_VERSION=1;
 
 let backuptext="";
@@ -103,15 +106,45 @@ function shellquote(text){
 	return "'"+String(text).replace(/'/g,"'\\''")+"'";
 }
 
-async function savebackupfile(text){
-	const result=await execasroot("printf '%s' "+shellquote(text)+" > "+BACKUP_FILE);
+function execok(result){
 	return !!result && result.returnValue!==false && !result.errorText && !result.exitCode;
 }
 
+// Written beside the file, flushed, then renamed over it. A rename is atomic: a power cut, the TV
+// going to standby or the app being closed mid-write leaves the old file or the new one, never a
+// truncated one (writing in place with `>` empties the file first, and an empty or cut file
+// cannot be restored from).
+async function savebackupfile(text){
+	return execok(await execasroot("printf '%s' "+shellquote(text)+" > "+BACKUP_TMP+" && sync && mv -f "+BACKUP_TMP+" "+BACKUP_FILE));
+}
+
+// One write at a time. Two shells writing the same file at once (the timed write still running
+// when the updater writes before reinstalling) interleave and leave invalid JSON behind.
+let backupwriting=null;   // the write in flight, or null
+function queuebackupwrite(write){
+	const start=() => write().catch(() => false);
+	const mine=backupwriting?backupwriting.then(start):start();
+	backupwriting=mine;
+	mine.then(() => { if(backupwriting===mine){ backupwriting=null; } });
+	return mine;
+}
+
+// {text} | {missing:true} | {error:true}: a file that is not there is not the same as one that could not be read
+async function readbackupstate(){
+	let result;
+	try {
+		result=await execasroot("if [ -f "+BACKUP_FILE+" ]; then cat "+BACKUP_FILE+"; else printf '%s' "+BACKUP_MISSING+"; fi");
+	} catch(e) {
+		return {error:true};
+	}
+	if(!execok(result)){ return {error:true}; }
+	const text=result.stdoutString || "";
+	return text===BACKUP_MISSING?{missing:true}:{text:text};
+}
+
 async function readbackupfile(){
-	const result=await execasroot("cat "+BACKUP_FILE);
-	if(!result || result.returnValue===false || result.errorText || result.exitCode){ return null; }
-	return result.stdoutString || null;
+	const file=await readbackupstate();
+	return file.text || null;
 }
 
 async function exportbackup(){
@@ -120,7 +153,8 @@ async function exportbackup(){
 	backupmessage=t("Backup created. Copy the text below and keep it somewhere safe.");
 	if(rooted){
 		let saved=false;
-		try { saved=await savebackupfile(backuptext); } catch(e) {}
+		const text=backuptext;
+		saved=await queuebackupwrite(() => savebackupfile(text));
 		backupmessage=saved?t("Saved to ")+BACKUP_FILE+t(". The same text is below."):t("Could not write ")+BACKUP_FILE+t(". The backup text is below.");
 	}
 	renderpane();
@@ -138,8 +172,25 @@ async function loadbackupfile(){
 	renderpane();
 }
 
-function importbackup(){
-	const parsed=parsebackup(backuptext);
+// an empty box means "the backup I have": with root that is the file, without root there is nothing to import
+async function importtext(){
+	if(backuptext.trim()!==""){ return backuptext; }
+	if(!rooted){ return null; }
+	let text=null;
+	try { text=await readbackupfile(); } catch(e) {}
+	if(text!==null){ backuptext=text; }
+	return text;
+}
+
+async function importbackup(){
+	const text=await importtext();
+	if(text===null){
+		backupmessage=rooted?t("No backup found in ")+BACKUP_FILE+".":t("Paste a backup in the box first.");
+		confirming=null;
+		renderpane();
+		return;
+	}
+	const parsed=parsebackup(text);
 	if(parsed.error){
 		backupmessage=parsed.error;
 	} else {
@@ -193,6 +244,7 @@ const AUTOBACKUP_DELAY_MS=3000;   // a burst of changes (reordering the dock) ma
 let autobackupready=false;        // stays false until start-up has looked for a restore: an empty
                                   // fresh state must never overwrite a good file first
 let autobackuptimer=null;
+let autobackupblocked=false;      // the file was there but could not be read: this session must not write over it
 
 function storageempty(){
 	try { return localStorage.getItem(SETTINGS_KEY)===null && localStorage.getItem(PREFS_KEY)===null; } catch(e) { return false; }
@@ -209,11 +261,18 @@ function restoreintostorage(parsed){
 // called once at start, after the root check and before the layout is loaded; true if it restored
 async function restorefromfile(){
 	if(!rooted || !storageempty()){ return false; }
-	let text=null;
-	try { text=await readbackupfile(); } catch(e) {}
-	if(!text){ return false; }
-	const parsed=parsebackup(text);
-	if(parsed.error){ return false; }
+	const file=await readbackupstate();
+	if(file.error){
+		autobackupblocked=true;   // it may hold everything: writing the empty state now would lose it for good
+		return false;
+	}
+	if(file.missing){ return false; }
+	const parsed=parsebackup(file.text || "");
+	if(parsed.error){
+		// nothing to restore; keep it aside (to look at) instead of quietly writing over it
+		try { await execasroot("mv -f "+BACKUP_FILE+" "+BACKUP_INVALID); } catch(e) {}
+		return false;
+	}
 	try {
 		restoreintostorage(parsed);
 	} catch(e) {
@@ -225,15 +284,15 @@ async function restorefromfile(){
 }
 
 function writebackupnow(){
-	if(!rooted){ return Promise.resolve(false); }
+	if(!rooted || autobackupblocked){ return Promise.resolve(false); }
 	clearTimeout(autobackuptimer);
 	autobackuptimer=null;
-	return savebackupfile(makebackup()).catch(() => false);
+	return queuebackupwrite(() => savebackupfile(makebackup()));   // the state when the write starts, not when it was asked for
 }
 
 // main.js and settings.js call this after every save
 function scheduleautobackup(){
-	if(!autobackupready || !rooted){ return; }
+	if(!autobackupready || autobackupblocked || !rooted){ return; }
 	clearTimeout(autobackuptimer);
 	autobackuptimer=setTimeout(writebackupnow,AUTOBACKUP_DELAY_MS);
 }
