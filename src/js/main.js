@@ -362,7 +362,13 @@ function unpinapp(id){
 	render();
 }
 
+// Until the saved layout has been read, `settings` holds the built-in defaults: saving them then
+// would replace the dock you built with the stock one. Both flags guard against that.
+let settingsloaded=false;   // loadsettings() has run
+let homestarted=false;      // inithomescreen() has finished
+
 function loadsettings(){
+	settingsloaded=true;
 	try {
 		const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY));
 		if(saved){
@@ -391,6 +397,7 @@ function loadsettings(){
 }
 
 function savesettings(){
+	if(!settingsloaded){ return; }
 	try {
 		localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
 	} catch(e) {}
@@ -622,6 +629,10 @@ async function uninstallapp(id){
 }
 
 async function reload() {
+	// Home sends webOSRelaunch, and it can be pressed while a slow boot is still starting the launcher:
+	// the layout is not loaded and root is not known yet (every icon would be the fallback one).
+	// inithomescreen() lists the apps and draws everything itself once it gets there.
+	if(!homestarted){ return; }
 
 	let newapplist, newapplistraw;
 	if (noappperm){
@@ -659,6 +670,7 @@ editbtn.addEventListener("click",toggleedit);
 realappbarbtu.addEventListener("change",drawerchanged);
 appbar.addEventListener("mouseenter",barhovered);
 render();
+homestarted=true;
 if(typeof startautobackup==="function"){ startautobackup(); }
 
 }
