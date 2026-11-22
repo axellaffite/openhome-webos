@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/theme.css">
 <!-- the app manager (js/appmanager.js): hold OK on an app in the dock -->
 <link rel="stylesheet" href="css/appmanager.css">
+<link rel="stylesheet" href="css/peek.css">
 
 <body>
 	<!-- Wallpaper is a video (hardware decoded, unlike CSS background images), driven by startbackground() in background.js: network
@@ -171,6 +172,9 @@
 <script src="js/fade.js"></script>
 <script src="js/forecast.js"></script>
 <script src="js/homesettings.js"></script>
+<!-- the input preview: softwall.js keeps the video wallpaper going in software while it holds the video plane -->
+<script src="js/softwall.js"></script>
+<script src="js/inputpeek.js"></script>
 <script src="js/tooltip.js"></script>
 <!-- after main.js and dpad.js (it uses their functions), and its key listeners run before dpad.js's -->
 <script src="js/appmanager.js"></script>

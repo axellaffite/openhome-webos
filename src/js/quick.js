@@ -14,6 +14,7 @@ const QUICK_GIVEUP=3;          // failed reads before falling back to showing ev
 let quickrow=null;
 let quickdevices=null;         // appId -> the TV's input record, once it has answered
 let quick5v={};                // port number -> is the 5V line live on it
+let quickpicture={};           // port number -> is a picture coming in on it right now (js/inputpeek.js)
 let quickfails=0;
 let quickshown={};             // appIds drawn by the previous render, so new ones can fade in
 let quickdrawn=false;
@@ -23,15 +24,23 @@ let quickkey="";               // quickrowkey() of what is drawn
 // the 5V line per port, for the devices that do not speak CEC. Answers as {"HDMI1":{"5v":"TRUE"},...}
 // whatever port you ask about, so it is asked once. (LG's own typo "FASLE" appears in there, which
 // is why this tests for TRUE rather than against FALSE.)
+// The same answer carries "signal": TRUE while a picture is actually arriving on that port, even
+// when the TV is showing something else. A device that is plugged in but dark reads FALSE, and the
+// input preview uses that to say so instead of opening a black window on it.
 async function read5v(){
 	try {
 		const answer=await lunacall('luna://com.webos.service.eim/getHDMISignalInfo',{});
 		const found={};
+		const picture={};
 		Object.keys(answer || {}).forEach((key) => {
 			const port=/^HDMI(\d+)$/.exec(key);
-			if(port && answer[key]){ found[Number(port[1])]=String(answer[key]["5v"]).toUpperCase()==="TRUE"; }
+			if(port && answer[key]){
+				found[Number(port[1])]=String(answer[key]["5v"]).toUpperCase()==="TRUE";
+				picture[Number(port[1])]=String(answer[key].signal).toUpperCase()==="TRUE";
+			}
 		});
 		quick5v=found;
+		quickpicture=picture;
 	} catch(e) {}
 }
 

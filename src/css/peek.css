@@ -1,0 +1,127 @@
+/* ---------- the input preview (js/inputpeek.js) ----------
+   A window that bounces out of the HDMI shortcut you rest on, with that input's live picture.
+   Chromium 68 rules apply (AGENTS.md): no inset, no aspect-ratio, no :has(). */
+#peekbox{
+	position:fixed;
+	z-index:8000;
+	width:30vw;
+	padding:0.9vh;
+	border-radius:2vh;
+	background:rgba(12,14,20,0.82);
+	border:1px solid rgba(255,255,255,0.16);
+	box-shadow:0 2.4vh 6vh rgba(0,0,0,0.6), 0 0 0 1px rgba(var(--accent),0.12);
+	color:rgb(255,255,255);
+	opacity:0;
+	pointer-events:none;
+}
+/* No transform on the shown state: the video plane is placed from the element's box, so the
+   window must be standing still - and untransformed - before the picture goes in. */
+#peekbox.in{ animation:peekin 620ms linear both; }
+#peekbox.shown{ opacity:1; }
+#peekbox.out{ animation:peekout 170ms ease-in both; }
+
+/* a damped spring: overshoot, undershoot, a smaller overshoot, rest */
+@keyframes peekin{
+	0%   { opacity:0; transform:scale(0.4); }
+	18%  { opacity:1; }
+	38%  { transform:scale(1.07); }
+	58%  { transform:scale(0.965); }
+	76%  { transform:scale(1.018); }
+	90%  { transform:scale(0.996); }
+	100% { opacity:1; transform:scale(1); }
+}
+@keyframes peekout{
+	from { opacity:1; transform:scale(1); }
+	to   { opacity:0; transform:scale(0.85); }
+}
+
+.peekscreen{
+	position:relative;
+	width:100%;
+	height:0;
+	padding-top:56.25%;           /* 16:9 */
+	border-radius:1.3vh;
+	overflow:hidden;
+	background:#05060a;
+}
+.peekvideo{
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	object-fit:contain;
+	opacity:0;
+	transition:opacity .25s ease;
+}
+#peekbox.live .peekvideo{ opacity:1; }
+#peekbox.live .peeknote{ opacity:0; }
+
+.peeknote{
+	position:absolute;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	box-sizing:border-box;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	padding:0 2vw;
+	text-align:center;
+	font-size:2vh;
+	font-weight:600;
+	color:rgba(255,255,255,0.62);
+	transition:opacity .25s ease;
+}
+/* a soft sweep while the picture is on its way */
+.peeknote.busy{
+	background:linear-gradient(100deg,rgba(255,255,255,0) 30%,rgba(255,255,255,0.07) 50%,rgba(255,255,255,0) 70%) #05060a;
+	background-size:220% 100%;
+	animation:peeksweep 1.3s linear infinite;
+}
+@keyframes peeksweep{
+	from { background-position:120% 0; }
+	to   { background-position:-120% 0; }
+}
+
+.peekfoot{
+	display:flex;
+	align-items:baseline;
+	justify-content:space-between;
+	gap:1vw;
+	padding:1.1vh 0.6vw 0.4vh;
+}
+.peekname{
+	font-size:2.2vh;
+	font-weight:700;
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+}
+.peekport{
+	font-size:1.6vh;
+	font-weight:600;
+	letter-spacing:0.04em;
+	color:rgb(var(--accent));
+	white-space:nowrap;
+}
+
+#realappbarbtu:checked ~ #peekbox{ display:none; }
+
+/* ---------- the wallpaper in software while a preview holds the video plane (js/softwall.js) ----------
+   Under #bgdim (z-index 1), so the night and idle dimming darken it like the video. No filter here:
+   AGENTS.md, filters on full-screen layers. */
+#softwall{
+	position:absolute;
+	top:0;
+	left:0;
+	width:100vw;
+	height:100vh;
+	object-fit:cover;
+	z-index:0;
+	opacity:0;
+	transition:opacity 280ms ease;
+	pointer-events:none;
+}
+#softwall.on{ opacity:1; }
