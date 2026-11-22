@@ -49,8 +49,13 @@ the key `~/.ssh/lgtv`.
   and wait for state `installed`. The Homebrew Channel's installer only accepts http(s) URLs.
 - **A page in the background is frozen**: webOS stops its timers, so an awaited evaluation over
   DevTools just hangs. Check `document.visibilityState` first.
-- **One hardware video plane.** `#bgvideo` and any other `<video>` (an `ext://hdmi:N` input
-  preview, say) cannot both be on screen; they take it from each other. See `js/softwall.js`.
+- **Two hardware video planes, one for `<video>`.** Every `<video>` (`#bgvideo`, an
+  `ext://hdmi:N` source) gets MAIN, so two of them take it from each other. The second plane,
+  SUB0, is reached through `luna://com.webos.service.videooutput` (register, connect,
+  setDisplayWindow on a 1920x1080 grid): `js/inputpeek.js` puts HDMI previews there. Video planes
+  are under the page, so `z-index` cannot lift them; the page must be transparent over them. The
+  service drops a connection when the bus connection that made it closes, so keep the
+  `PalmServiceBridge` objects alive (`lunacall` lets them be collected).
 - **`deploy.sh` copies files but does not reload the page**: its launch request only brings the
   running launcher to the front. Reload through DevTools (`location.reload()`) or install a package.
 - Reaching the TV can fail from a sandboxed or GUI-hosted shell with `No route to host`: that is
