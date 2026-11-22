@@ -12,10 +12,17 @@
 // CPU), while uploading them as a WebGL texture holds 29.8 fps. Hence WebGL, full size, and nothing
 // above 1080p - the built-in 4K loop.mp4 is out of reach, and the preview says so instead.
 //
-// The bytes: the aerials are cross-origin without CORS, so the page cannot read them, and the TV's
-// curl does not trust Apple's root. So the root service fetches byte ranges with curl, trusting the
-// system store plus access/certs/apple-root-ca.pem (Apple Root CA, SHA-256 B0:B1:73:0E:...:F0:24),
-// into peekcache/ in the app's folder, which the page can read. Local files are cut out with dd.
+// When the wallpaper cannot be decoded here (the Fire TV aerials are HEVC, some videos are 4K, a
+// custom one may be unreadable), something else covers it while the preview is open: a stand-in
+// Apple aerial, or failing that one of the bundled photographs (see swcandidates). The wallpaper is
+// never just gone, on any TV, with or without root.
+//
+// The bytes: Apple's aerial server answers cross-origin Range requests (Access-Control-Allow-Origin
+// "*", "range" allowed - checked 2026-11-22), so the page reads them itself over http, which needs
+// no root and works on any TV. Local files are asked for the same way. Only when that fails, and
+// the TV is rooted, does the root service fetch the range: curl, trusting the system store plus
+// access/certs/apple-root-ca.pem (Apple Root CA, SHA-256 B0:B1:73:0E:...:F0:24), into peekcache/
+// in the app's folder, which the page can read; local files are cut out with dd.
 //
 // Keyframes are ~5 s apart and decoding is only 1.2x real time, so the software copy can never
 // catch up with the exact frame on screen. Instead it starts at the NEXT keyframe, fetched and
@@ -41,8 +48,24 @@ const SW_SEEK_WAIT_MS=1500;              // longest wait for the hardware video 
 const SW_SETTLE_MS=250;                  // and a beat more, so it has painted a frame
 const SW_FIRST_FRAME_MS=5000;            // a decoder that has shown nothing by then never will
 
+const SW_DIRECT_SLACK=256*1024;          // a direct read this far past its range ignored the Range header
+// Every Fire TV aerial is HEVC, in all three sizes on Amazon's server (FHD, HD and UHD, checked
+// 2026-11-22), and Amazon sends no CORS header either: not worth a try, straight to a stand-in.
+const SW_NO_SOFTWARE=/\.firetv\.amazon\.dev\//i;
+const SW_APPLE_AVC=/^https?:\/\/sylvan\.apple\.com\/.*_AVC\.mov$/i;   // 137 of the 139 Apple aerials
+const SW_STANDIN_ONLINE=2;               // online stand-ins tried before settling for a still
+const SW_STANDIN_FROM_S=30;              // a stand-in starts this far in, past any fade from black
+const SW_STILL_MS=4000;                  // longest wait for a still picture to decode
+const SW_DIRECT_TIMEOUT_MS=10000;        // a direct read that has not finished by then (no network) fails
+
 const swmetas={};                        // url -> parsed header, so a second preview starts faster
-let swrun=null;                          // the one session there can be
+const swdirect={};                       // url -> false once the page could not read it itself
+let swrun=null;                          // what covers the wallpaper: a decoded video, or a still
+let swfor=null;                          // the wallpaper the session being prepared stands in for
+let swready=null;                        // ... and its preparation, true once start() can cover it
+let swsession=0;                         // bumped by cancel(), so a preparation in flight stands down
+let swgoodstandin=null;                  // the stand-in that worked last time, tried first
+let swstillimg=null;
 let swcanvas=null;
 let swgl=null;
 let swseq=0;
@@ -97,8 +120,56 @@ function swlocalpath(url){
 	return decodeURI(url.replace(/^file:\/\//i,""));
 }
 
-// bytes start..end (inclusive) of the video, as an ArrayBuffer
+function swrootok(){
+	return typeof rooted!=="undefined" && !!rooted && typeof execasroot==="function";
+}
+
+// Apple's chain is not trusted everywhere; the same file is served over http (js/aerialcache.js)
+function swdirecturl(url){
+	return url.replace(/^https:\/\/sylvan\.apple\.com\//i,"http://sylvan.apple.com/");
+}
+
+// A Range request from the page itself. A server or file loader that ignores the Range header
+// would send the whole video (200+ MB), so the download is cut off as soon as it overshoots.
+function swxhrrange(url,start,end){
+	const want=end-start+1;
+	return new Promise((done,fail) => {
+		const request=new XMLHttpRequest();
+		request.open("GET",url);
+		request.responseType="arraybuffer";
+		request.setRequestHeader("Range","bytes="+start+"-"+end);
+		request.timeout=SW_DIRECT_TIMEOUT_MS;
+		request.ontimeout=() => fail(new Error("timed out: "+url));
+		request.onprogress=(event) => { if(event.loaded>want+SW_DIRECT_SLACK){ request.abort(); } };
+		request.onabort=() => fail(new Error("range ignored: "+url));
+		request.onerror=() => fail(new Error("could not read "+url));
+		request.onload=() => {
+			const got=request.response;
+			const size=got?got.byteLength:0;
+			// 206: the range itself. 200 (http) or 0 (file://) only counts when it is exactly the range.
+			const ok=request.status===206?size>0 && size<=want:
+				(request.status===200 || request.status===0) && size===want;
+			if(ok){ done(got); } else { fail(new Error("no range from "+url+" ("+request.status+")")); }
+		};
+		request.send();
+	});
+}
+
+// bytes start..end (inclusive) of the video, as an ArrayBuffer: straight from the page, which needs
+// no root; through the root service only if that failed and root is there.
 async function swread(url,start,end){
+	if(swdirect[url]!==false){
+		try {
+			return await swxhrrange(swdirecturl(url),start,end);
+		} catch(e) {
+			if(!swrootok()){ throw e; }
+			swdirect[url]=false;     // root works for this video, so stop trying the other way
+		}
+	}
+	return swreadroot(url,start,end);
+}
+
+async function swreadroot(url,start,end){
 	const name="r"+(++swseq)+".bin";
 	const dir=appdir+"/"+SW_DIR;
 	const out=dir+"/"+name;
@@ -231,6 +302,17 @@ function swstartindex(samples){
 	return -1;
 }
 
+// a stand-in has no place to match: a keyframe a little way in, or the first one
+function swstandinindex(samples){
+	let first=-1;
+	for(let i=0;i<samples.length;i++){
+		if(!samples[i].key){ continue; }
+		if(first<0){ first=i; }
+		if(samples[i].time>=SW_STANDIN_FROM_S){ return i; }
+	}
+	return first;
+}
+
 // downloads the next few seconds of samples in one range
 async function swfetchwindow(run,seconds){
 	const samples=run.meta.samples;
@@ -287,61 +369,166 @@ function swfeed(run){
 	}));
 }
 
-function swcancel(){
-	const run=swrun;
-	swrun=null;
-	if(!run){ return; }
+// ends one video or still, and nothing else: a failed candidate makes way for the next one
+function swendrun(run){
+	if(swrun===run){ swrun=null; }
 	run.alive=false;
+	if(run.still){
+		if(swstillimg){ swstillimg.classList.remove("on"); }
+		return;
+	}
 	if(run.raf){ cancelAnimationFrame(run.raf); }
 	run.frames.forEach((frame) => frame.close());
 	run.frames=[];
 	if(run.first){ run.first.close(); run.first=null; }
 	if(run.decoder && run.decoder.state!=="closed"){ try { run.decoder.close(); } catch(e) {} }
 	if(swcanvas){ swcanvas.classList.remove("on"); }
-	wallsh("rm -rf "+shellquote(appdir+"/"+SW_DIR)).catch(() => {});
 }
 
-// Starts fetching and decoding the wallpaper ahead. Cheap to call again for the same wallpaper.
-// Resolves to true once the first frame is decoded and start() can cover the wallpaper with it.
+// ends the whole session, including a preparation still trying candidates
+function swcancel(){
+	// called on every focus move between shortcuts: only a session that existed has files to clear
+	const had=swfor!==null || swrun!==null;
+	swsession++;
+	swfor=null;
+	swready=null;
+	if(swrun){ swendrun(swrun); }
+	if(had && swrootok()){ wallsh("rm -rf "+shellquote(appdir+"/"+SW_DIR)).catch(() => {}); }
+}
+
+// ---- what to show instead of the wallpaper, best first ---------------------------------------------
+//
+//   1. the wallpaper itself, carried on in software: H.264 up to 1080p that the page can read
+//   2. a stand-in aerial: an Apple one (H.264, 2K), from the TV's aerial cache if there is one, else
+//      streamed. The Fire TV aerials, 4K videos and unreadable custom videos land here: a different
+//      landscape moves behind the preview, and the real wallpaper fades back when it closes.
+//   3. a still: one of the bundled photographs. No decoder at all, so it also covers the old webOS
+//      releases without WebCodecs, and a TV with no network.
+
+function swexact(source){
+	return !SW_NO_SOFTWARE.test(source) && !(swmetas[source] && swmetas[source].unusable);
+}
+
+function swabsolute(url){
+	try { return new URL(url,location.href).href; } catch(e) { return url; }
+}
+
+function swstandins(source){
+	const list=(typeof aerials!=="undefined" && Array.isArray(aerials))?aerials:[];
+	const apple=list.filter((each) => each && SW_APPLE_AVC.test(each.u));
+	const names={};
+	apple.forEach((each) => { names[String(each.u).split("/").pop()]=true; });
+	// cached ones first: read from the disk, they are ready in a fraction of the time
+	const cached=((typeof aerialstate==="function" && typeof AERIALDIR!=="undefined")?aerialstate().files:[])
+		.filter((name) => names[name])
+		.map((name) => swabsolute("hack"+AERIALDIR+"/"+encodeURIComponent(name)));
+	const online=[];
+	const offline=typeof navigator!=="undefined" && navigator.onLine===false;
+	for(let i=0;i<SW_STANDIN_ONLINE && apple.length && !offline;i++){
+		online.push(swdirecturl(apple[Math.floor(Math.random()*apple.length)].u));
+	}
+	const seen={};
+	return [swgoodstandin].concat(cached,online).filter((url) => {
+		if(!url || url===source || seen[url] || (swmetas[url] && swmetas[url].unusable)){ return false; }
+		seen[url]=true;
+		return true;
+	});
+}
+
+async function swcandidates(source,session){
+	// the built-in 4K loop is a slideshow of the bundled photographs, so one of them is the match
+	const slideshow=typeof bgmode!=="undefined" && bgmode==="local";
+	if(swcapable() && !slideshow){
+		const videos=(swexact(source)?[{url:source,exact:true}]:[])
+			.concat(swstandins(source).map((url) => ({url,exact:false})));
+		for(const each of videos){
+			if(session!==swsession){ return false; }
+			if(await swtryvideo(each.url,each.exact,session)){
+				if(!each.exact){ swgoodstandin=each.url; }
+				return true;
+			}
+		}
+	}
+	return session===swsession && swtrystill(session);
+}
+
+async function swtrystill(session){
+	const list=(typeof wallpapers!=="undefined" && Array.isArray(wallpapers))?wallpapers:[];
+	if(!list.length){ return false; }
+	if(!swstillimg){
+		swstillimg=document.createElement("img");
+		swstillimg.id="softstill";
+		swstillimg.alt="";
+		bgvideo.parentNode.insertBefore(swstillimg,bgvideo.nextSibling);
+	}
+	const img=swstillimg;
+	img.src="access/wallpaper/"+list[Math.floor(Math.random()*list.length)];
+	const decoded=(typeof img.decode==="function")?img.decode():
+		new Promise((done,fail) => { img.onload=done; img.onerror=fail; });
+	try {
+		await Promise.race([decoded,swwait(SW_STILL_MS).then(() => { throw new Error("slow"); })]);
+	} catch(e) {
+		return false;
+	}
+	if(session!==swsession){ return false; }
+	swrun={still:true,alive:true,started:false,url:null};
+	return true;
+}
+
+// Starts fetching and decoding ahead, from the best candidate that works. Cheap to call again for
+// the same wallpaper. Resolves to true once start() can cover the wallpaper.
 function swprepare(){
-	const url=swsource();
-	if(!url || !swcapable()){ return Promise.resolve(false); }
-	if(swrun && swrun.url===url && swrun.alive){ return swrun.ready; }
+	const source=swsource();
+	if(!source){ return Promise.resolve(false); }
+	if(swfor===source && swready){ return swready; }
 	swcancel();
-	const run={url,alive:true,chunks:[],frames:[],first:null,fetched:0,decoded:0,fetching:false,
+	const session=swsession;
+	swfor=source;
+	swready=swcandidates(source,session).catch(() => false);
+	return swready;
+}
+
+// one video candidate; false (and cleaned up) when it cannot be shown
+async function swtryvideo(url,exact,session){
+	const run={url,exact,alive:true,chunks:[],frames:[],first:null,fetched:0,decoded:0,fetching:false,
 		started:false,raf:0,base:0,basetime:0,decoder:null,meta:null};
 	run.clock=() => run.started?run.basetime+(performance.now()-run.base)/1000:bgvideo.currentTime;
+	if(session!==swsession){ return false; }
 	swrun=run;
-	run.ready=(async () => {
-		run.meta=await swloadmeta(url);
-		swalive(run);
-		const start=swstartindex(run.meta.samples);
-		if(start<0){ throw new Error("too close to the end"); }
-		run.fetched=start;
-		run.decoded=start;
-		await swfetchwindow(run,SW_FIRST_WINDOW_S);
-		const firstframe=new Promise((done,fail) => {
-			run.decoder=new VideoDecoder({
-				output:(frame) => {
-					if(!run.alive){ frame.close(); return; }
-					if(!run.first){ run.first=frame; done(); return; }
-					run.frames.push(frame);
-				},
-				error:(error) => { fail(error); swcancel(); }
-			});
-		});
-		run.decoder.configure({codec:run.meta.codec,description:run.meta.description,hardwareAcceleration:"prefer-software"});
-		// the decoder holds frames back until it has seen a few more (reordering), so the pump
-		// starts feeding at once and the first frame comes out of that
-		swpump(run);
-		await Promise.race([firstframe,swwait(SW_FIRST_FRAME_MS).then(() => { throw new Error("no frame"); })]);
-		swalive(run);
-		return true;
-	})().catch(() => {
-		if(swrun===run){ swcancel(); }
+	try {
+		await swdecodeahead(run);
+		return run.alive && session===swsession;
+	} catch(e) {
+		swendrun(run);
 		return false;
+	}
+}
+
+async function swdecodeahead(run){
+	run.meta=await swloadmeta(run.url);
+	swalive(run);
+	const start=run.exact?swstartindex(run.meta.samples):swstandinindex(run.meta.samples);
+	if(start<0){ throw new Error("too close to the end"); }
+	run.fetched=start;
+	run.decoded=start;
+	await swfetchwindow(run,SW_FIRST_WINDOW_S);
+	const firstframe=new Promise((done,fail) => {
+		run.decoder=new VideoDecoder({
+			output:(frame) => {
+				if(!run.alive){ frame.close(); return; }
+				if(!run.first){ run.first=frame; done(); return; }
+				run.frames.push(frame);
+			},
+			// on screen, the session is over; still being prepared, the next candidate gets its turn
+			error:(error) => { fail(error); if(run.started){ swcancel(); } else { swendrun(run); } }
+		});
 	});
-	return run.ready;
+	run.decoder.configure({codec:run.meta.codec,description:run.meta.description,hardwareAcceleration:"prefer-software"});
+	// the decoder holds frames back until it has seen a few more (reordering), so the pump
+	// starts feeding at once and the first frame comes out of that
+	swpump(run);
+	await Promise.race([firstframe,swwait(SW_FIRST_FRAME_MS).then(() => { throw new Error("no frame"); })]);
+	swalive(run);
 }
 
 // ---- drawing --------------------------------------------------------------------------------------
@@ -401,8 +588,16 @@ function swtick(run){
 // Covers the wallpaper with the software copy. Resolves true once the canvas is fully over it, so
 // the hardware plane can be handed to someone else; false if there is nothing to cover it with.
 async function swstart(){
+	if(!swready || !(await swready)){ return false; }
 	const run=swrun;
-	if(!run || !(await run.ready) || !run.alive || !run.first){ return false; }
+	if(!run || !run.alive || run.started){ return false; }
+	if(run.still){
+		run.started=true;
+		swstillimg.classList.add("on");
+		await swwait(SW_FADE_MS);
+		return run.alive;
+	}
+	if(!run.first){ return false; }
 	if(!swgl){ swgl=swsetupgl(); }
 	if(!swgl){ return false; }
 	swdraw(run.first);
@@ -430,8 +625,9 @@ async function swstop(){
 	const run=swrun;
 	if(!run){ return; }
 	if(!run.started){ swcancel(); return; }
-	// keep drawing while the hardware video comes back, then fade over to it
-	if(bgvideo.currentSrc===run.url){
+	// keep drawing while the hardware video comes back, then fade over to it; only the wallpaper
+	// itself has a place to pick up from, a stand-in just fades away
+	if(!run.still && bgvideo.currentSrc===run.url){
 		const seeked=swonce(bgvideo,"seeked",SW_SEEK_WAIT_MS);
 		try { bgvideo.currentTime=run.clock(); } catch(e) {}
 		await seeked;
@@ -439,14 +635,14 @@ async function swstop(){
 	bgvideo.play().catch(() => {});
 	await swwait(SW_SETTLE_MS);
 	if(swrun!==run){ return; }
-	swcanvas.classList.remove("on");
+	(run.still?swstillimg:swcanvas).classList.remove("on");
 	await swwait(SW_FADE_MS);
 	if(swrun===run){ swcancel(); }
 }
 
 // drops a session that was prepared but never shown; one on screen only ends through stop()
 function swdrop(){
-	if(swrun && !swrun.started){ swcancel(); }
+	if(!swrun || !swrun.started){ swcancel(); }
 }
 
 const softwall={needed:swneeded,prepare:swprepare,start:swstart,stop:swstop,cancel:swdrop};
