@@ -1,8 +1,9 @@
 # AGENTS.md
 
 Notes for coding agents working on OpenHome, a replacement home screen for rooted LG webOS TVs.
-This is a fork of `devic021/openhome-webos` (itself a fork of OpenLauncher). `CLAUDE.md` is a
-symlink to this file.
+It grew out of `devic021/openhome-webos` (itself a fork of OpenLauncher) and has been a standalone
+repository since 2026-11-22, detached from GitHub's fork network. `CLAUDE.md` is a symlink to this
+file.
 
 ## The code
 
@@ -46,6 +47,10 @@ the key `~/.ssh/lgtv`.
   the `.ipk` to `/tmp` on the TV, then
   `luna-send -n 30 luna://com.webos.appInstallService/dev/install '{"id":"io.github.axellaffite.openhome","ipkUrl":"/tmp/x.ipk","subscribe":true}' < /dev/null`
   and wait for state `installed`. The Homebrew Channel's installer only accepts http(s) URLs.
+- **A page in the background is frozen**: webOS stops its timers, so an awaited evaluation over
+  DevTools just hangs. Check `document.visibilityState` first.
+- **One hardware video plane.** `#bgvideo` and any other `<video>` (an `ext://hdmi:N` input
+  preview, say) cannot both be on screen; they take it from each other. See `js/softwall.js`.
 - **`deploy.sh` copies files but does not reload the page**: its launch request only brings the
   running launcher to the front. Reload through DevTools (`location.reload()`) or install a package.
 - Reaching the TV can fail from a sandboxed or GUI-hosted shell with `No route to host`: that is
@@ -110,10 +115,11 @@ app for the Home button. On webOS 10.3 the setting is accepted at boot and lost 
   `settings`, which that file carries.
 - Commits made before this rule use plain-sentence titles; leave history as it is.
 - Upstream (`devic021`) does not use Conventional Commits: its titles are plain sentences
-  describing the problem or outcome. A PR meant for upstream goes from a separate branch based on
-  `origin/main` and follows upstream's style, not this one.
-- Remotes: `origin` is upstream (`devic021`), `fork` is this fork. This fork does not follow
-  upstream any more: its releases and updates come from `axellaffite/openhome-webos` only.
+  describing the problem or outcome. A PR meant for upstream needs that remote added first
+  (`git remote add upstream git@github.com:devic021/openhome-webos.git`), goes from a separate
+  branch based on `upstream/main`, and follows upstream's style, not this one.
+- Remotes: `origin` is this repository, `axellaffite/openhome-webos`, and the only one. It does
+  not follow upstream: its releases and updates come from here only. Branch from `origin/main`.
 
 ## What this fork changes on purpose
 
