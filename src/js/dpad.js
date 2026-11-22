@@ -183,6 +183,17 @@ function firstdockapp(tiles) {
 	return tiles.filter((tile) => !tile.closest("label[for=realappbarbtu]"))[0] || tiles[0] || null;
 }
 
+// The launcher opens - or comes back in front - with the remote already on the first dock app: the
+// ring is showing and the first arrow press moves it. Before, nothing was focused, and the first
+// press was spent only switching the ring on. A panel or the drawer that is open keeps the remote.
+function focusonopen() {
+	if(openpanel() || realappbarbtu.checked){ return; }
+	const app=firstdockapp(within(appbar,".appitem"));
+	if(!app){ return; }
+	keyboardmode=true;
+	setfocus(app);
+}
+
 // where focus starts: the first dock app at home, the first app in the drawer, the selected tab in settings, ...
 function defaultfocus(list) {
 	if(settingsisopen()){
@@ -483,6 +494,7 @@ function initdpad() {
 	window.addEventListener("mouseover",onmouseover,true);
 	document.addEventListener("cursorStateChange",oncursorstate);
 	window.addEventListener("mousedown",() => { if(keyboardmode){ clearfocus(); } },true);
+	document.addEventListener("visibilitychange",() => { if(!document.hidden){ focusonopen(); } });
 }
 
 document.addEventListener("DOMContentLoaded",initdpad);

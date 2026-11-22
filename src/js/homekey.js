@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 the OpenHome contributors
 // The remote's Home button, pressed while OpenHome is already in front, brings back its main
-// screen: every panel closed, the drawer shut, the focus on the Apps button.
+// screen: every panel closed, the drawer shut, the focus on the first dock app.
 //
 // With OpenHome as the home app, webOS does not start it again on Home: it sends the running page
 // a webOSRelaunch event, with launchType "homeKey" (checked on a 65UR78003LK, webOS 10.3). Only
@@ -26,12 +26,9 @@ function gohome(){
 		toggleedit();
 	}
 	if(infolder){ render(); }
-	// the focus ring, if the remote is in use, goes to the Apps button: the first tile of the dock.
-	// Not defaultfocus(), which picks the first thing in the home screen's list, the weather card.
-	if(keyboardmode && typeof setfocus==="function"){
-		const apps=appbar.querySelector(".appitem");
-		if(apps){ setfocus(apps); }
-	}
+	// the remote goes to the first dock app, as when the launcher opens (dpad.js). Not
+	// defaultfocus(), which picks the first thing in the home screen's list, the weather card.
+	if(typeof focusonopen==="function"){ focusonopen(); }
 }
 
 document.addEventListener("webOSRelaunch",(event) => {

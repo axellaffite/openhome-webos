@@ -671,6 +671,7 @@ realappbarbtu.addEventListener("change",drawerchanged);
 appbar.addEventListener("mouseenter",barhovered);
 render();
 homestarted=true;
+if(typeof focusonopen==="function"){ focusonopen(); }
 if(typeof startautobackup==="function"){ startautobackup(); }
 
 }
