@@ -17,6 +17,7 @@ let quick5v={};                // port number -> is the 5V line live on it
 let quickfails=0;
 let quickshown={};             // appIds drawn by the previous render, so new ones can fade in
 let quickdrawn=false;
+let quickkey="";               // quickrowkey() of what is drawn
 
 // which inputs have a device on them, from the TV's own input manager
 // the 5V line per port, for the devices that do not speak CEC. Answers as {"HDMI1":{"5v":"TRUE"},...}
@@ -114,7 +115,28 @@ function inputicons(app){
 	return out;
 }
 
+// Everything a shortcut shows: which inputs, their names, their artwork and whether their light is
+// on. The row is only redrawn when this changes - see renderquick().
+function quickrowkey(apps){
+	return apps.map((each) => {
+		const device=quickdevices && quickdevices[each.id];
+		const glyph=(typeof inputglyph==="function")?inputglyph(each,device):null;
+		return [each.id,appdisplayname(each),quicksignal(each),glyph || inputicons(each)[0]].join("|");
+	}).join("\n");
+}
+
+// after a redraw, the remote's focus goes back to the input it was on, now a new button
+function quickrefocus(row,appid){
+	const again=row.querySelector('.qchip[data-appid="'+appid+'"]');
+	if(again){ setfocus(again); }
+}
+
 // called from render() in main.js, so it follows renames, hiding and app installs
+//
+// It also runs every QUICK_POLL_MS, and redrawing throws the buttons away. A focus left on a thrown
+// away button sent the next arrow press to the first dock app, and the input preview measured it
+// at 0,0 and opened at the top of the screen. So: nothing is redrawn when nothing changed, and when
+// something did, the focus follows its input to the new button.
 function renderquick(){
 	if(!quickrow){
 		quickrow=document.createElement("div");
@@ -123,6 +145,11 @@ function renderquick(){
 	}
 	const apps=quickapps();
 	maindiv.classList.toggle("has-quick",apps.length>0);
+	const key=quickrowkey(apps);
+	if(quickdrawn && key===quickkey){ return; }
+	quickkey=key;
+	const focused=(typeof dpadfocus!=="undefined" && dpadfocus && quickrow.contains(dpadfocus))?
+		dpadfocus.getAttribute("data-appid"):null;
 	quickrow.innerHTML="";
 	const seen={};
 	if(apps.length===0){ quickshown=seen; quickdrawn=true; return; }
@@ -159,6 +186,7 @@ function renderquick(){
 	});
 	quickshown=seen;
 	quickdrawn=true;
+	if(focused){ quickrefocus(quickrow,focused); }
 }
 
 document.addEventListener("DOMContentLoaded",() => {
