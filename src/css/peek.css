@@ -55,6 +55,25 @@
 	transition:opacity .25s ease;
 }
 #peekbox.live .peekvideo{ opacity:1; }
+
+/* The input on the second hardware plane (js/inputpeek.js): it is under the page, and shows only
+   where every pixel above it is fully transparent. So the window paints no background behind its
+   screen: the frame around the screen is the screen's own spread shadow, which only paints outside
+   it, and the caption bar carries its own background. */
+#peekbox.native{ background:transparent; }
+#peekbox.native .peekscreen{
+	background:transparent;
+	box-shadow:0 0 0 0.9vh rgba(12,14,20,0.82);
+}
+#peekbox.native .peeknote{ display:none; }
+/* the same height as the plain caption (margin + padding add up to its 1.1vh / 0.4vh + 0.9vh), so
+   switching to it does not move the window's bottom, which was placed clear of the app bar */
+#peekbox.native .peekfoot{
+	margin:0.9vh -0.9vh -0.9vh;
+	padding:0.2vh 1.5vh 1.3vh;
+	border-radius:0 0 2vh 2vh;
+	background:rgba(12,14,20,0.82);
+}
 #peekbox.live .peeknote{ opacity:0; }
 
 .peeknote{
@@ -112,7 +131,8 @@
 /* ---------- the wallpaper in software while a preview holds the video plane (js/softwall.js) ----------
    Under #bgdim (z-index 1), so the night and idle dimming darken it like the video. No filter here:
    AGENTS.md, filters on full-screen layers. */
-#softwall{
+#softwall,
+#softstill{
 	position:absolute;
 	top:0;
 	left:0;
@@ -124,4 +144,5 @@
 	transition:opacity 280ms ease;
 	pointer-events:none;
 }
-#softwall.on{ opacity:1; }
+#softwall.on,
+#softstill.on{ opacity:1; }
